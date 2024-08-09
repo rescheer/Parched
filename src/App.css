@@ -1,0 +1,60 @@
+#root {
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+  text-align: center;
+}
+
+.flex-container {
+  display: flex;
+  flex-direction: row;
+  flex-basis: 0;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.flex-item {
+  flex-grow: 1;
+  flex-basis: 0;
+}
+
+.flex-item-left {
+  text-align: start;
+}
+
+.flex-item-right {
+  text-align: end;
+}
+
+.imgColumn {
+  background-color: white;
+}
+
+.imgSpanLogo img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  padding: 0;
+  margin: 0;
+}
+
+.error {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  color: red;
+  font-weight: 700;
+}
+
+.countdown {
+  display: block;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+textarea {
+  resize: none;
+}
