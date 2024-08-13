@@ -161,14 +161,15 @@ function App() {
         refreshButton.disabled = true;
 
         getJobsData(tokenField.value)
-          .then((data) => {
+          .then((rawData) => {
+            // Perform filtering here
             setButtonText('Refresh');
             setError('');
             if (!grid) {
               // Initialization
-              setGrid(initGrid(data.jobs));
+              setGrid(initGrid(rawData.jobs));
             } else {
-              grid.setGridOption('rowData', data.jobs);
+              grid.setGridOption('rowData', rawData.jobs);
             }
           })
           .catch((error) => {
