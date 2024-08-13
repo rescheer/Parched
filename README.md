@@ -1,6 +1,6 @@
 # Parched
 
-An alternative, feature-rich front-end for Poached.com using Vite and React. Parched is in currently in development and at this time only shows jobs in the Bar category.
+An alternative, feature-rich front-end for Poachedjobs.com using Vite and React. Parched is in currently in development and at this time only shows jobs in the Bar category.
 
 
 ## Features
