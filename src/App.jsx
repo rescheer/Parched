@@ -4,11 +4,7 @@ import { createGrid } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-import LogoRenderer from './renderer/LogoRenderer';
-import TitleRenderer from './renderer/TitleRenderer';
-import CompanyRenderer from './renderer/CompanyRenderer';
-import LocationRenderer from './renderer/LocationRenderer';
-import getDistanceInMiles from './lib/getDistanceInMiles';
+import gridDefs from './definitions/gridDefs';
 import './App.css';
 
 const apiUrl =
@@ -30,32 +26,6 @@ async function getJobsData(token) {
     return response.data;
   }
   return undefined;
-}
-
-function timeSinceString(time) {
-  const periods = {
-    month: 30 * 24 * 60 * 60 * 1000,
-    week: 7 * 24 * 60 * 60 * 1000,
-    day: 24 * 60 * 60 * 1000,
-    hour: 60 * 60 * 1000,
-    minute: 60 * 1000,
-  };
-
-  const diff = Date.now() - time;
-
-  if (diff > periods.month) {
-    // it was at least a month ago
-    return Math.floor(diff / periods.month) + 'mo ago';
-  } else if (diff > periods.week) {
-    return Math.floor(diff / periods.week) + 'w ago';
-  } else if (diff > periods.day) {
-    return Math.floor(diff / periods.day) + 'd ago';
-  } else if (diff > periods.hour) {
-    return Math.floor(diff / periods.hour) + 'h ago';
-  } else if (diff > periods.minute) {
-    return Math.floor(diff / periods.minute) + 'm ago';
-  }
-  return 'Just now';
 }
 
 function toReadableTimer(timeLeft) {
@@ -81,7 +51,7 @@ function App() {
 
   // Settings States
   const [token, setToken] = useState('');
-  const [loc, setLocation] = useState(``);
+  const [location, setLocation] = useState(``);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(1);
 
@@ -149,6 +119,21 @@ function App() {
     }
   }, [autoRefreshEnabled]);
 
+  // On change in location
+  useEffect(() => {
+    if (location && grid) {
+      grid.setGridOption('context', { homeLoc: location });
+    }
+  }, [location, grid]);
+
+  const getContext = () => {
+    const location = document.getElementById(locationId).value;
+
+    return {
+      homeLoc: location,
+    }
+  }
+
   const refresh = () => {
     const tokenField = document.getElementById(tokenId);
     const refreshButton = document.getElementById(refreshButtonId);
@@ -187,100 +172,12 @@ function App() {
     }
   };
 
-  function getDistanceFromMe(lat, long) {
-    const loc = document.getElementById(locationId).value;
-    if (loc) {
-      const splitLoc = loc.split(',');
-      let result = 'N/A';
-      const localLat = +splitLoc[0].trim();
-      const localLong = +splitLoc[1].trim();
-      if (lat && long) {
-        result = getDistanceInMiles(lat, long, localLat, localLong);
-      }
-      return result;
-    } else {
-      return 'N/A';
-    }
-  }
-
   function initGrid(data) {
     const gridOptions = {
       rowData: data,
+      context: getContext(),
       resetRowDataOnUpdate: true,
-      columnDefs: [
-        {
-          field: 'logoUrl',
-          headerName: 'Logo',
-          cellRenderer: LogoRenderer,
-          cellClass: 'imgColumn',
-          maxWidth: 100,
-        },
-        {
-          field: 'company',
-          cellRenderer: CompanyRenderer,
-          flex: 3,
-          filter: true,
-          cellStyle: { cursor: 'pointer' },
-          onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
-        },
-        {
-          field: 'title',
-          headerName: 'Job Title',
-          valueFormatter: (node) =>
-            node.value ? node.value : 'Unspecified Title',
-          cellRenderer: TitleRenderer,
-          flex: 3,
-          filter: true,
-        },
-        {
-          field: 'postDate',
-          flex: 1,
-          sort: 'desc',
-          headerName: 'Posted',
-          valueGetter: (node) => timeSinceString(new Date(node.data.postDate)),
-          comparator: (valueA, valueB, nodeA, nodeB) => {
-            const timeA = new Date(nodeA.data.postDate).getTime();
-            const timeB = new Date(nodeB.data.postDate).getTime();
-
-            if (timeA < timeB) {
-              return -1; // dateA comes before dateB
-            } else if (timeA > timeB) {
-              return 1; // dateA comes after dateB
-            } else {
-              return 0; // dates are equal
-            }
-          },
-        },
-        {
-          field: 'typeName',
-          headerName: 'Job Type',
-          valueFormatter: (node) => (node.value ? node.value : 'Unspecified'),
-          flex: 1,
-          filter: true,
-        },
-        {
-          field: 'city',
-          cellRenderer: LocationRenderer,
-          flex: 1,
-          filter: true,
-        },
-        {
-          field: 'distance',
-          valueGetter: (node) =>
-            getDistanceFromMe(node.data.latitude, node.data.longitude),
-          valueFormatter: (node) =>
-            typeof node.value === 'string'
-              ? node.value
-              : `${+node.value.toFixed(1)} mi`,
-          flex: 1,
-        },
-        {
-          field: 'jobViews',
-          valueFormatter: (node) => (node.value ? node.value : 'Unknown'),
-          flex: 1,
-          headerName: 'Views',
-        },
-      ],
+      columnDefs: gridDefs,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
@@ -318,7 +215,7 @@ function App() {
       <label>Latitude, Longitude: </label>
       <input
         id={locationId}
-        defaultValue={loc}
+        defaultValue={location}
         onChange={(e) => {
           setLocation(e.target.value);
           localStorage.setItem('location', e.target.value);
