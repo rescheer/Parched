@@ -4,7 +4,7 @@ import { createGrid } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-import gridDefs from './definitions/gridDefs';
+import * as Definitions from './config/definitions';
 import './App.css';
 
 const apiUrl =
@@ -131,8 +131,8 @@ function App() {
 
     return {
       homeLoc: location,
-    }
-  }
+    };
+  };
 
   const refresh = () => {
     const tokenField = document.getElementById(tokenId);
@@ -177,7 +177,7 @@ function App() {
       rowData: data,
       context: getContext(),
       resetRowDataOnUpdate: true,
-      columnDefs: gridDefs,
+      columnDefs: Definitions.column,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
