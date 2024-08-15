@@ -49,6 +49,7 @@ function App() {
   const [buttonText, setButtonText] = useState('Get Jobs');
   const [error, setError] = useState('');
   const [grid, setGrid] = useState(null);
+  const [mobile, setMobile] = useState(window.innerWidth < 1000);
 
   // Settings States
   const [location, setLocation] = useState(``);
@@ -110,6 +111,31 @@ function App() {
     return () => clearInterval(intervalId);
   }, []);
 
+  useEffect(() => {
+    // Resize listener
+    function resize() {
+      setTimeout(function () {
+        if (grid) {
+          if (window.innerWidth < 1000) {
+            if (!mobile) {
+              grid.setGridOption('columnDefs', Definitions.mobileColumn);
+              setMobile(true);
+            }
+          } else {
+            if (mobile) {
+              grid.setGridOption('columnDefs', Definitions.nonMobileColumn);
+              setMobile(false);
+            }
+          }
+        }
+      });
+    }
+
+    window.addEventListener('resize', resize);
+
+    return () => window.removeEventListener('resize', resize);
+  }, [grid, mobile]);
+
   // On change in autoRefreshEnabled
   useEffect(() => {
     if (autoRefreshEnabled) {
@@ -165,11 +191,17 @@ function App() {
   };
 
   function initGrid(data) {
+    let columnDefs;
+    if (window.innerWidth < 1000) {
+      columnDefs = Definitions.mobileColumn;
+    } else {
+      columnDefs = Definitions.nonMobileColumn;
+    }
     const gridOptions = {
       rowData: data,
       context: getContext(),
       resetRowDataOnUpdate: true,
-      columnDefs: Definitions.column,
+      columnDefs: columnDefs,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
@@ -185,11 +217,12 @@ function App() {
   }
 
   // JSX
+  const gridHeight = window.innerHeight - 110;
   const gridPage = (
     <div
       id="dataGrid"
       className="ag-theme-quartz-dark"
-      style={{ height: 850 }}
+      style={{ height: gridHeight }}
     />
   );
 
@@ -247,14 +280,13 @@ function App() {
 
   return (
     <>
+      <nav>
+        <div className="title">
+          Parched<sup>v1.1.0</sup>
+        </div>
+      </nav>
       <div className="flex-container">
         <div className="flex-item flex-item-left">
-          <h1>
-            Parched<sup> v1.1.0</sup>
-          </h1>
-          <sup>by robby scheer</sup>
-        </div>
-        <div className="flex-item">
           <div className="countdown">
             {autoRefreshEnabled
               ? `Auto refresh in ${toReadableTimer(

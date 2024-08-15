@@ -2,12 +2,21 @@
   width: 100%;
   margin: 0 auto;
   padding: 1rem;
+  padding-top: 0;
   text-align: center;
+}
+
+.title {
+  font-size: 2em;
+  text-align: left;
+  padding: 0;
 }
 
 .flex-container {
   display: flex;
+  padding-bottom: 5px;
   flex-direction: row;
+  flex-wrap: wrap;
   flex-basis: 0;
   justify-content: space-around;
   align-items: center;
@@ -19,7 +28,7 @@
 }
 
 .flex-item-left {
-  text-align: start;
+  text-align: left;
 }
 
 .flex-item-right {
