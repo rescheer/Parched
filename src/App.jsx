@@ -4,19 +4,21 @@ import { createGrid } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
-import gridDefs from './definitions/gridDefs';
+import * as Definitions from './config/definitions';
+import AuthProvider from './class/AuthProvider';
 import './App.css';
 
 const apiUrl =
-  'https://poachedjobs.com/api/v1/jobs?backfill=true&category=51&distance=15&exclude%5B%5D=content&isLikelyFraud=false&latitude=45.533467&limit=999&locationLabel=Portland%2C%20OR&longitude=-122.650095&page=1&sort=score%20DESC&status=publish&weightedSearch=true';
+  'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&exclude%5B%5D=content&isLikelyFraud=false&latitude=45.533467&limit=999&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
+const auth = new AuthProvider();
 
 /**
  * Asynchronously returns jobs data from the Poached API. Returns undefined on failure.
  */
-async function getJobsData(token) {
+async function getJobsData() {
   const options = {
     headers: {
-      Authorization: 'Bearer ' + token,
+      Authorization: 'Bearer ' + auth.token,
     },
   };
 
@@ -39,7 +41,6 @@ function toReadableTimer(timeLeft) {
 }
 
 function App() {
-  const tokenId = useId();
   const refreshButtonId = useId();
   const locationId = useId();
 
@@ -50,7 +51,6 @@ function App() {
   const [grid, setGrid] = useState(null);
 
   // Settings States
-  const [token, setToken] = useState('');
   const [location, setLocation] = useState(``);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(1);
@@ -76,7 +76,6 @@ function App() {
 
     // Check for stored values from a previous session
     const keys = [
-      { key: 'token', value: `` },
       { key: 'autoRefresh', value: `` },
       { key: 'interval', value: `` },
       { key: 'location', value: `` },
@@ -85,9 +84,6 @@ function App() {
       if (localStorage.getItem(item.key)) {
         const value = localStorage.getItem(item.key);
         switch (item.key) {
-          case 'token':
-            setToken(value);
-            break;
           case 'autoRefresh':
             if (value === 'true') {
               setAutoRefreshEnabled(true);
@@ -106,6 +102,9 @@ function App() {
         }
       }
     });
+
+    // Auth
+    auth.init();
 
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
@@ -131,44 +130,37 @@ function App() {
 
     return {
       homeLoc: location,
-    }
-  }
+    };
+  };
 
   const refresh = () => {
-    const tokenField = document.getElementById(tokenId);
     const refreshButton = document.getElementById(refreshButtonId);
-    const val = tokenField.value;
     if (!refreshButton.disabled) {
-      if (val && val.length === 1259) {
-        setToken(tokenField.value);
-        localStorage.setItem('token', tokenField.value);
-        setButtonText('Getting jobs...');
-        refreshButton.disabled = true;
+      setButtonText('Getting jobs...');
+      refreshButton.disabled = true;
 
-        getJobsData(tokenField.value)
-          .then((rawData) => {
-            // Perform filtering here
-            setButtonText('Refresh');
-            setError('');
-            if (!grid) {
-              // Initialization
-              setGrid(initGrid(rawData.jobs));
-            } else {
-              grid.setGridOption('rowData', rawData.jobs);
-            }
-          })
-          .catch((error) => {
-            setButtonText('Retry');
-            setError(error);
-          })
-          .finally(() => {
-            refreshButton.disabled = false;
-            setTimer(0);
-          });
-      } else {
-        setError('Invalid auth token.');
-        refreshButton.disabled = false;
-      }
+      getJobsData()
+        .then((rawData) => {
+          // Perform filtering here
+          setButtonText('Refresh');
+          setError('');
+          if (!grid) {
+            // Initialization
+            setGrid(initGrid(rawData.jobs));
+          } else {
+            grid.setGridOption('rowData', rawData.jobs);
+          }
+        })
+        .catch((error) => {
+          auth.init();
+          setButtonText('Retry');
+          setError(error);
+          console.log(error);
+        })
+        .finally(() => {
+          refreshButton.disabled = false;
+          setTimer(0);
+        });
     }
   };
 
@@ -177,7 +169,7 @@ function App() {
       rowData: data,
       context: getContext(),
       resetRowDataOnUpdate: true,
-      columnDefs: gridDefs,
+      columnDefs: Definitions.column,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
@@ -204,13 +196,6 @@ function App() {
   const settingsPage = (
     <div>
       <h2>Settings</h2>
-      <h3>Poached Token</h3>
-      <textarea
-        id={tokenId}
-        defaultValue={token}
-        style={{ width: '50%', height: 100, minWidth: 300 }}
-      />
-      <hr />
       <h3>Location</h3>
       <label>Latitude, Longitude: </label>
       <input
@@ -265,7 +250,7 @@ function App() {
       <div className="flex-container">
         <div className="flex-item flex-item-left">
           <h1>
-            Parched<sup> v1.0.0</sup>
+            Parched<sup> v1.1.0</sup>
           </h1>
           <sup>by robby scheer</sup>
         </div>
