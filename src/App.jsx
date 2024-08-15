@@ -15,10 +15,10 @@ const auth = new AuthProvider();
 /**
  * Asynchronously returns jobs data from the Poached API. Returns undefined on failure.
  */
-async function getJobsData() {
+async function getJobsData(token) {
   const options = {
     headers: {
-      Authorization: 'Bearer ' + auth.token,
+      Authorization: 'Bearer ' + token,
     },
   };
 
@@ -43,8 +43,10 @@ function toReadableTimer(timeLeft) {
 function App() {
   const refreshButtonId = useId();
   const locationId = useId();
+  const localToken = localStorage.getItem('token') || '';
 
   // Main States
+  const [token, setToken] = useState(localToken);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [buttonText, setButtonText] = useState('Get Jobs');
   const [error, setError] = useState('');
@@ -77,6 +79,7 @@ function App() {
 
     // Check for stored values from a previous session
     const keys = [
+      { key: 'token', value: '' },
       { key: 'autoRefresh', value: `` },
       { key: 'interval', value: `` },
       { key: 'location', value: `` },
@@ -85,6 +88,11 @@ function App() {
       if (localStorage.getItem(item.key)) {
         const value = localStorage.getItem(item.key);
         switch (item.key) {
+          case 'token':
+            if (value !== token) {
+              setToken(value);
+            }
+            break;
           case 'autoRefresh':
             if (value === 'true') {
               setAutoRefreshEnabled(true);
@@ -105,14 +113,23 @@ function App() {
     });
 
     // Auth
-    auth.init();
+    async function updateToken() {
+      console.log('Fetching new auth token.');
+      const authToken = await auth.init();
+      localStorage.setItem('token', authToken);
+      setToken(authToken);
+    }
+
+    if (!token) {
+      updateToken();
+    }
 
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
-  }, []);
+  }, [token]);
 
+  // Resize listener
   useEffect(() => {
-    // Resize listener
     function resize() {
       setTimeout(function () {
         if (grid) {
@@ -165,7 +182,7 @@ function App() {
       setButtonText('Getting jobs...');
       refreshButton.disabled = true;
 
-      getJobsData()
+      getJobsData(token)
         .then((rawData) => {
           // Perform filtering here
           setButtonText('Refresh');
@@ -178,10 +195,12 @@ function App() {
           }
         })
         .catch((error) => {
-          auth.init();
+          if (error?.response?.status === 401) {
+            console.log('Token is invalid or expired');
+            setToken('');
+          }
           setButtonText('Retry');
           setError(error);
-          console.log(error);
         })
         .finally(() => {
           refreshButton.disabled = false;
@@ -284,6 +303,7 @@ function App() {
         <div className="title">
           Parched<sup>v1.1.0</sup>
         </div>
+        <div className="error">{error.message}</div>
       </nav>
       <div className="flex-container">
         <div className="flex-item flex-item-left">
@@ -302,7 +322,6 @@ function App() {
           >
             {buttonText}
           </button>
-          <div className="error">{error.message}</div>
         </div>
         <div className="flex-item flex-item-right">
           <button type="button" onClick={toggleSettings}>

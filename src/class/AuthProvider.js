@@ -65,6 +65,8 @@ export default class AuthProvider {
     this.#token = await this.#getToken();
 
     this.#isInitialized = true;
+
+    return this.#token;
   }
 
   // Private Methods
