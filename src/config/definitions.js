@@ -87,6 +87,8 @@ export const nonMobileColumn = [
     cellRenderer: TitleRenderer,
     flex: 3,
     filter: true,
+    cellStyle: { cursor: 'pointer' },
+    onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
   },
   {
     field: 'postDate',
@@ -119,6 +121,8 @@ export const nonMobileColumn = [
     cellRenderer: LocationRenderer,
     flex: 1,
     filter: true,
+    cellStyle: { cursor: 'pointer' },
+    onCellClicked: (e) => window.open(e.node.data.googlePlaceUrl, '_blank'),
   },
   {
     field: 'distance',

@@ -236,7 +236,7 @@ function App() {
   }
 
   // JSX
-  const gridHeight = window.innerHeight - 110;
+  const gridHeight = window.innerHeight - 115;
   const gridPage = (
     <div
       id="dataGrid"
@@ -246,54 +246,56 @@ function App() {
   );
 
   const settingsPage = (
-    <div>
-      <h2>Settings</h2>
-      <h3>Location</h3>
-      <label>Latitude, Longitude: </label>
-      <input
-        id={locationId}
-        defaultValue={location}
-        onChange={(e) => {
-          setLocation(e.target.value);
-          localStorage.setItem('location', e.target.value);
-        }}
-        style={{ width: 270 }}
-      />
-      <hr />
-      <h3>Auto Refresh</h3>
-      <input
-        type="checkbox"
-        checked={autoRefreshEnabled}
-        onChange={(e) => {
-          setTimer(0);
-          setAutoRefreshEnabled(e.target.checked);
-          localStorage.setItem('autoRefresh', e.target.checked);
-        }}
-      />
-      Auto Refresh <br />
-      <label>Interval: </label>
-      <input
-        type="range"
-        min={0}
-        max={4}
-        step={1}
-        value={autoRefreshInterval}
-        style={{ width: 150 }}
-        list="ticks"
-        onChange={(e) => {
-          setAutoRefreshInterval(e.target.value);
-          localStorage.setItem('interval', e.target.value);
-        }}
-      />
-      <br />
-      {intervalValues[autoRefreshInterval].readable}
-      <datalist id="ticks">
-        <option>0</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>4</option>
-      </datalist>
+    <div className="settingsRoot">
+      <div className="settings">
+        <h2>Settings</h2>
+        <h3>Location</h3>
+        <label>Latitude, Longitude: </label>
+        <input
+          id={locationId}
+          defaultValue={location}
+          onChange={(e) => {
+            setLocation(e.target.value);
+            localStorage.setItem('location', e.target.value);
+          }}
+          style={{ width: 270 }}
+        />
+        <hr />
+        <h3>Auto Refresh</h3>
+        <input
+          type="checkbox"
+          checked={autoRefreshEnabled}
+          onChange={(e) => {
+            setTimer(0);
+            setAutoRefreshEnabled(e.target.checked);
+            localStorage.setItem('autoRefresh', e.target.checked);
+          }}
+        />
+        Auto Refresh <br />
+        <label>Interval: </label>
+        <input
+          type="range"
+          min={0}
+          max={4}
+          step={1}
+          value={autoRefreshInterval}
+          style={{ width: 150 }}
+          list="ticks"
+          onChange={(e) => {
+            setAutoRefreshInterval(e.target.value);
+            localStorage.setItem('interval', e.target.value);
+          }}
+        />
+        <br />
+        {intervalValues[autoRefreshInterval].readable}
+        <datalist id="ticks">
+          <option>0</option>
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option>4</option>
+        </datalist>
+      </div>
     </div>
   );
 
@@ -304,16 +306,16 @@ function App() {
           Parched<sup>v1.1.0</sup>
         </div>
         <div className="error">{error.message}</div>
+        <div className="countdown">
+          {autoRefreshEnabled
+            ? `Auto refresh in ${toReadableTimer(
+                intervalValues[autoRefreshInterval].sec - timer
+              )}`
+            : `\u00A0`}
+        </div>
       </nav>
       <div className="flex-container">
         <div className="flex-item flex-item-left">
-          <div className="countdown">
-            {autoRefreshEnabled
-              ? `Auto refresh in ${toReadableTimer(
-                  intervalValues[autoRefreshInterval].sec - timer
-                )}`
-              : ``}
-          </div>
           <button
             type="button"
             onClick={refresh}

@@ -7,7 +7,7 @@
 }
 
 .title {
-  font-size: 2em;
+  font-size: 1.5em;
   text-align: left;
   padding: 0;
 }
@@ -64,10 +64,21 @@
 
 .countdown {
   display: block;
-  position: absolute;
   left: 0;
   right: 0;
   top: 0;
+  font-size: smaller;
+  line-height: normal;
+}
+
+.settingsRoot {
+  padding: 8px;
+  width: 100%;
+  max-width: 600px;
+  margin: auto;
+  border: 1px solid transparent;
+  border-color: #ffffff;
+  border-radius: 8px;
 }
 
 textarea {
