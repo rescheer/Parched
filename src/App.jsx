@@ -15,10 +15,10 @@ const auth = new AuthProvider();
 /**
  * Asynchronously returns jobs data from the Poached API. Returns undefined on failure.
  */
-async function getJobsData() {
+async function getJobsData(token) {
   const options = {
     headers: {
-      Authorization: 'Bearer ' + auth.token,
+      Authorization: 'Bearer ' + token,
     },
   };
 
@@ -43,12 +43,15 @@ function toReadableTimer(timeLeft) {
 function App() {
   const refreshButtonId = useId();
   const locationId = useId();
+  const localToken = localStorage.getItem('token') || '';
 
   // Main States
+  const [token, setToken] = useState(localToken);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [buttonText, setButtonText] = useState('Get Jobs');
   const [error, setError] = useState('');
   const [grid, setGrid] = useState(null);
+  const [mobile, setMobile] = useState(window.innerWidth < 1000);
 
   // Settings States
   const [location, setLocation] = useState(``);
@@ -76,6 +79,7 @@ function App() {
 
     // Check for stored values from a previous session
     const keys = [
+      { key: 'token', value: '' },
       { key: 'autoRefresh', value: `` },
       { key: 'interval', value: `` },
       { key: 'location', value: `` },
@@ -84,6 +88,11 @@ function App() {
       if (localStorage.getItem(item.key)) {
         const value = localStorage.getItem(item.key);
         switch (item.key) {
+          case 'token':
+            if (value !== token) {
+              setToken(value);
+            }
+            break;
           case 'autoRefresh':
             if (value === 'true') {
               setAutoRefreshEnabled(true);
@@ -104,11 +113,45 @@ function App() {
     });
 
     // Auth
-    auth.init();
+    async function updateToken() {
+      console.log('Fetching new auth token.');
+      const authToken = await auth.init();
+      localStorage.setItem('token', authToken);
+      setToken(authToken);
+    }
+
+    if (!token) {
+      updateToken();
+    }
 
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
-  }, []);
+  }, [token]);
+
+  // Resize listener
+  useEffect(() => {
+    function resize() {
+      setTimeout(function () {
+        if (grid) {
+          if (window.innerWidth < 1000) {
+            if (!mobile) {
+              grid.setGridOption('columnDefs', Definitions.mobileColumn);
+              setMobile(true);
+            }
+          } else {
+            if (mobile) {
+              grid.setGridOption('columnDefs', Definitions.nonMobileColumn);
+              setMobile(false);
+            }
+          }
+        }
+      });
+    }
+
+    window.addEventListener('resize', resize);
+
+    return () => window.removeEventListener('resize', resize);
+  }, [grid, mobile]);
 
   // On change in autoRefreshEnabled
   useEffect(() => {
@@ -139,7 +182,7 @@ function App() {
       setButtonText('Getting jobs...');
       refreshButton.disabled = true;
 
-      getJobsData()
+      getJobsData(token)
         .then((rawData) => {
           // Perform filtering here
           setButtonText('Refresh');
@@ -152,10 +195,12 @@ function App() {
           }
         })
         .catch((error) => {
-          auth.init();
+          if (error?.response?.status === 401) {
+            console.log('Token is invalid or expired');
+            setToken('');
+          }
           setButtonText('Retry');
           setError(error);
-          console.log(error);
         })
         .finally(() => {
           refreshButton.disabled = false;
@@ -165,11 +210,17 @@ function App() {
   };
 
   function initGrid(data) {
+    let columnDefs;
+    if (window.innerWidth < 1000) {
+      columnDefs = Definitions.mobileColumn;
+    } else {
+      columnDefs = Definitions.nonMobileColumn;
+    }
     const gridOptions = {
       rowData: data,
       context: getContext(),
       resetRowDataOnUpdate: true,
-      columnDefs: Definitions.column,
+      columnDefs: columnDefs,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
@@ -185,83 +236,86 @@ function App() {
   }
 
   // JSX
+  const gridHeight = window.innerHeight - 115;
   const gridPage = (
     <div
       id="dataGrid"
       className="ag-theme-quartz-dark"
-      style={{ height: 850 }}
+      style={{ height: gridHeight }}
     />
   );
 
   const settingsPage = (
-    <div>
-      <h2>Settings</h2>
-      <h3>Location</h3>
-      <label>Latitude, Longitude: </label>
-      <input
-        id={locationId}
-        defaultValue={location}
-        onChange={(e) => {
-          setLocation(e.target.value);
-          localStorage.setItem('location', e.target.value);
-        }}
-        style={{ width: 270 }}
-      />
-      <hr />
-      <h3>Auto Refresh</h3>
-      <input
-        type="checkbox"
-        checked={autoRefreshEnabled}
-        onChange={(e) => {
-          setTimer(0);
-          setAutoRefreshEnabled(e.target.checked);
-          localStorage.setItem('autoRefresh', e.target.checked);
-        }}
-      />
-      Auto Refresh <br />
-      <label>Interval: </label>
-      <input
-        type="range"
-        min={0}
-        max={4}
-        step={1}
-        value={autoRefreshInterval}
-        style={{ width: 150 }}
-        list="ticks"
-        onChange={(e) => {
-          setAutoRefreshInterval(e.target.value);
-          localStorage.setItem('interval', e.target.value);
-        }}
-      />
-      <br />
-      {intervalValues[autoRefreshInterval].readable}
-      <datalist id="ticks">
-        <option>0</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>4</option>
-      </datalist>
+    <div className="settingsRoot">
+      <div className="settings">
+        <h2>Settings</h2>
+        <h3>Location</h3>
+        <label>Latitude, Longitude: </label>
+        <input
+          id={locationId}
+          defaultValue={location}
+          onChange={(e) => {
+            setLocation(e.target.value);
+            localStorage.setItem('location', e.target.value);
+          }}
+          style={{ width: 270 }}
+        />
+        <hr />
+        <h3>Auto Refresh</h3>
+        <input
+          type="checkbox"
+          checked={autoRefreshEnabled}
+          onChange={(e) => {
+            setTimer(0);
+            setAutoRefreshEnabled(e.target.checked);
+            localStorage.setItem('autoRefresh', e.target.checked);
+          }}
+        />
+        Auto Refresh <br />
+        <label>Interval: </label>
+        <input
+          type="range"
+          min={0}
+          max={4}
+          step={1}
+          value={autoRefreshInterval}
+          style={{ width: 150 }}
+          list="ticks"
+          onChange={(e) => {
+            setAutoRefreshInterval(e.target.value);
+            localStorage.setItem('interval', e.target.value);
+          }}
+        />
+        <br />
+        {intervalValues[autoRefreshInterval].readable}
+        <datalist id="ticks">
+          <option>0</option>
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+          <option>4</option>
+        </datalist>
+      </div>
     </div>
   );
 
   return (
     <>
+      <nav>
+        <div className="title">
+          Parched<sup>v1.1.0</sup>
+        </div>
+        <div className="error">{error.message}</div>
+        <div className="countdown">
+          {autoRefreshEnabled
+            ? `Auto refresh in ${toReadableTimer(
+                intervalValues[autoRefreshInterval].sec - timer
+              )}`
+            : `\u00A0`}
+        </div>
+      </nav>
       <div className="flex-container">
         <div className="flex-item flex-item-left">
-          <h1>
-            Parched<sup> v1.1.0</sup>
-          </h1>
-          <sup>by robby scheer</sup>
-        </div>
-        <div className="flex-item">
-          <div className="countdown">
-            {autoRefreshEnabled
-              ? `Auto refresh in ${toReadableTimer(
-                  intervalValues[autoRefreshInterval].sec - timer
-                )}`
-              : ``}
-          </div>
           <button
             type="button"
             onClick={refresh}
@@ -270,7 +324,6 @@ function App() {
           >
             {buttonText}
           </button>
-          <div className="error">{error.message}</div>
         </div>
         <div className="flex-item flex-item-right">
           <button type="button" onClick={toggleSettings}>

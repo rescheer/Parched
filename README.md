@@ -14,9 +14,6 @@ An alternative, feature-rich front-end for Poachedjobs.com using Vite and React.
 ### What it does not do
 - Attempt to bypass, provide, or emulate any of the paid systems of Poachedjobs.com
 
-## Limitations
-- Currently, you must provide Parched with a Poachedjobs.com authentication token which can be found through the use of brower dev tools. Insctructions for doing so will be provided within the app itself
-
 ## Planned Features
 - Provide all job categories
 - Customizable alerts

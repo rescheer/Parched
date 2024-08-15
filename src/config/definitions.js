@@ -63,7 +63,7 @@ function getDistanceFromMe(homeLoc, lat, long) {
   }
 }
 
-export const column = [
+export const nonMobileColumn = [
   {
     field: 'logoUrl',
     headerName: '',
@@ -87,6 +87,8 @@ export const column = [
     cellRenderer: TitleRenderer,
     flex: 3,
     filter: true,
+    cellStyle: { cursor: 'pointer' },
+    onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
   },
   {
     field: 'postDate',
@@ -119,6 +121,8 @@ export const column = [
     cellRenderer: LocationRenderer,
     flex: 1,
     filter: true,
+    cellStyle: { cursor: 'pointer' },
+    onCellClicked: (e) => window.open(e.node.data.googlePlaceUrl, '_blank'),
   },
   {
     field: 'distance',
@@ -146,5 +150,43 @@ export const column = [
     valueFormatter: (cb) => (cb.value ? cb.value : 'Unknown'),
     flex: 1,
     headerName: 'Views',
+  },
+];
+
+export const mobileColumn = [
+  {
+    field: 'company',
+    cellRenderer: CompanyRenderer,
+    flex: 3,
+    filter: true,
+    cellStyle: { cursor: 'pointer' },
+    onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
+  },
+  {
+    field: 'title',
+    headerName: 'Job Title',
+    valueFormatter: (cb) => (cb.value ? cb.value : 'Unspecified Title'),
+    cellRenderer: TitleRenderer,
+    flex: 3,
+    filter: true,
+  },
+  {
+    field: 'postDate',
+    flex: 2,
+    sort: 'asc',
+    headerName: 'Posted',
+    valueGetter: (cb) => timeSinceString(new Date(cb.data.postDate)),
+    comparator: (valueA, valueB, nodeA, nodeB) => {
+      const timeA = new Date(nodeA.data.postDate).getTime();
+      const timeB = new Date(nodeB.data.postDate).getTime();
+
+      if (timeB < timeA) {
+        return -1; // dateA comes before dateB
+      } else if (timeB > timeA) {
+        return 1; // dateA comes after dateB
+      } else {
+        return 0; // dates are equal
+      }
+    },
   },
 ];
