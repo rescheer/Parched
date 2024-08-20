@@ -3,7 +3,7 @@ import { SHA256, HmacSHA256, enc } from 'crypto-js';
 export default class AuthProvider {
   // Constructor
   constructor() {
-    this.#isInitialized = false;
+    this.#initialized = false;
   }
 
   // Static Vars
@@ -58,13 +58,13 @@ export default class AuthProvider {
   };
 
   // Public Methods
-  async init() {
+  async refreshToken() {
     this.#poolId = await this.#getPoolId();
     this.#identId = await this.#getIdentId();
     this.#credentials = await this.#getCredentials();
     this.#token = await this.#getToken();
 
-    this.#isInitialized = true;
+    this.#initialized = true;
 
     return this.#token;
   }
@@ -234,7 +234,7 @@ export default class AuthProvider {
 
   #token;
 
-  #isInitialized;
+  #initialized;
 
   // Getters
   get token() {
@@ -242,6 +242,6 @@ export default class AuthProvider {
   }
 
   get isInitialized() {
-    return this.#isInitialized;
+    return this.#initialized;
   }
 }

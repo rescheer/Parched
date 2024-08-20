@@ -1,7 +1,5 @@
 import LogoRenderer from '../renderer/LogoRenderer';
-import TitleRenderer from '../renderer/TitleRenderer';
-import CompanyRenderer from '../renderer/CompanyRenderer';
-import LocationRenderer from '../renderer/LocationRenderer';
+import FakeLinkRenderer from '../renderer/FakeLinkRenderer';
 
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
@@ -63,8 +61,8 @@ function getDistanceFromMe(homeLoc, lat, long) {
   }
 }
 
-export const nonMobileColumn = [
-  {
+const col = {
+  logoUrl: {
     field: 'logoUrl',
     headerName: '',
     cellRenderer: LogoRenderer,
@@ -72,25 +70,25 @@ export const nonMobileColumn = [
     maxWidth: 100,
     sortable: false,
   },
-  {
+  company: {
     field: 'company',
-    cellRenderer: CompanyRenderer,
+    cellRenderer: FakeLinkRenderer,
     flex: 3,
     filter: true,
     cellStyle: { cursor: 'pointer' },
-    onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
+    onCellClicked: (e) => window.open(e.node.data.companyUrl, '_blank'),
   },
-  {
+  title: {
     field: 'title',
     headerName: 'Job Title',
     valueFormatter: (cb) => (cb.value ? cb.value : 'Unspecified Title'),
-    cellRenderer: TitleRenderer,
+    cellRenderer: FakeLinkRenderer,
     flex: 3,
     filter: true,
     cellStyle: { cursor: 'pointer' },
     onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
   },
-  {
+  postDate: {
     field: 'postDate',
     flex: 1,
     sort: 'asc',
@@ -109,22 +107,22 @@ export const nonMobileColumn = [
       }
     },
   },
-  {
+  typeName: {
     field: 'typeName',
     headerName: 'Job Type',
     valueFormatter: (cb) => (cb.value ? cb.value : 'Unspecified'),
     flex: 1,
     filter: true,
   },
-  {
+  city: {
     field: 'city',
-    cellRenderer: LocationRenderer,
+    cellRenderer: FakeLinkRenderer,
     flex: 1,
     filter: true,
     cellStyle: { cursor: 'pointer' },
     onCellClicked: (e) => window.open(e.node.data.googlePlaceUrl, '_blank'),
   },
-  {
+  distance: {
     field: 'distance',
     valueGetter: (cb) =>
       getDistanceFromMe(
@@ -145,48 +143,23 @@ export const nonMobileColumn = [
     },
     flex: 1,
   },
-  {
+  jobViews: {
     field: 'jobViews',
     valueFormatter: (cb) => (cb.value ? cb.value : 'Unknown'),
     flex: 1,
     headerName: 'Views',
   },
+};
+
+export const nonMobileColumn = [
+  col.logoUrl,
+  col.company,
+  col.title,
+  col.postDate,
+  col.typeName,
+  col.city,
+  col.distance,
+  col.jobViews,
 ];
 
-export const mobileColumn = [
-  {
-    field: 'company',
-    cellRenderer: CompanyRenderer,
-    flex: 3,
-    filter: true,
-    cellStyle: { cursor: 'pointer' },
-    onCellClicked: (e) => window.open(e.node.data.url, '_blank'),
-  },
-  {
-    field: 'title',
-    headerName: 'Job Title',
-    valueFormatter: (cb) => (cb.value ? cb.value : 'Unspecified Title'),
-    cellRenderer: TitleRenderer,
-    flex: 3,
-    filter: true,
-  },
-  {
-    field: 'postDate',
-    flex: 2,
-    sort: 'asc',
-    headerName: 'Posted',
-    valueGetter: (cb) => timeSinceString(new Date(cb.data.postDate)),
-    comparator: (valueA, valueB, nodeA, nodeB) => {
-      const timeA = new Date(nodeA.data.postDate).getTime();
-      const timeB = new Date(nodeB.data.postDate).getTime();
-
-      if (timeB < timeA) {
-        return -1; // dateA comes before dateB
-      } else if (timeB > timeA) {
-        return 1; // dateA comes after dateB
-      } else {
-        return 0; // dates are equal
-      }
-    },
-  },
-];
+export const mobileColumn = [col.company, col.title, col.postDate];

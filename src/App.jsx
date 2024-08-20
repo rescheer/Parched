@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useEffect, useId, useState } from 'react';
 import { createGrid } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
@@ -9,7 +8,7 @@ import AuthProvider from './class/AuthProvider';
 import './App.css';
 
 const apiUrl =
-  'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&exclude%5B%5D=content&isLikelyFraud=false&latitude=45.533467&limit=999&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
+  'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&isLikelyFraud=false&latitude=45.533467&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
 const auth = new AuthProvider();
 
 /**
@@ -17,15 +16,17 @@ const auth = new AuthProvider();
  */
 async function getJobsData(token) {
   const options = {
+    method: 'GET',
     headers: {
       Authorization: 'Bearer ' + token,
     },
   };
 
-  const response = await axios.get(apiUrl, options);
+  const stream = await fetch(apiUrl, options);
+  const response = await stream.json();
 
-  if (response.data) {
-    return response.data;
+  if (response) {
+    return response;
   }
   return undefined;
 }
@@ -34,7 +35,11 @@ function toReadableTimer(timeLeft) {
   let sliceBegin = 14;
   let suffix = ``;
   if (timeLeft <= 60) {
-    sliceBegin = 17;
+    if (timeLeft <= 9) {
+      sliceBegin = 18;
+    } else {
+      sliceBegin = 17;
+    }
     suffix = `s`;
   }
   return new Date(timeLeft * 1000).toISOString().slice(sliceBegin, 19) + suffix;
@@ -43,15 +48,14 @@ function toReadableTimer(timeLeft) {
 function App() {
   const refreshButtonId = useId();
   const locationId = useId();
-  const localToken = localStorage.getItem('token') || '';
 
   // Main States
-  const [token, setToken] = useState(localToken);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [buttonText, setButtonText] = useState('Get Jobs');
   const [error, setError] = useState('');
   const [grid, setGrid] = useState(null);
   const [mobile, setMobile] = useState(window.innerWidth < 1000);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Settings States
   const [location, setLocation] = useState(``);
@@ -70,16 +74,21 @@ function App() {
   ];
 
   // Hooks
-  // After initial render only
+  // Set up timer for auto refresh
+  // Run once on mount
   useEffect(() => {
-    // Set up timer for auto refresh
     const intervalId = setInterval(() => {
       setTimer((prevTimer) => prevTimer + 1);
     }, 1000);
 
-    // Check for stored values from a previous session
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Checks for stored values from a previous session
+  // Run once on mount
+  useEffect(() => {
     const keys = [
-      { key: 'token', value: '' },
       { key: 'autoRefresh', value: `` },
       { key: 'interval', value: `` },
       { key: 'location', value: `` },
@@ -88,11 +97,6 @@ function App() {
       if (localStorage.getItem(item.key)) {
         const value = localStorage.getItem(item.key);
         switch (item.key) {
-          case 'token':
-            if (value !== token) {
-              setToken(value);
-            }
-            break;
           case 'autoRefresh':
             if (value === 'true') {
               setAutoRefreshEnabled(true);
@@ -111,24 +115,10 @@ function App() {
         }
       }
     });
+  }, []);
 
-    // Auth
-    async function updateToken() {
-      console.log('Fetching new auth token.');
-      const authToken = await auth.init();
-      localStorage.setItem('token', authToken);
-      setToken(authToken);
-    }
-
-    if (!token) {
-      updateToken();
-    }
-
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, [token]);
-
-  // Resize listener
+  // Listens for resize events and updates grid display mode
+  // Run on change in grid or mobile states
   useEffect(() => {
     function resize() {
       setTimeout(function () {
@@ -153,7 +143,8 @@ function App() {
     return () => window.removeEventListener('resize', resize);
   }, [grid, mobile]);
 
-  // On change in autoRefreshEnabled
+  // Resets elapsed time when autoRefreshEnabled state changes
+  // Runs on change in autoRefreshEnabled
   useEffect(() => {
     if (autoRefreshEnabled) {
       localStorage.setItem('autoRefresh', autoRefreshEnabled);
@@ -161,7 +152,8 @@ function App() {
     }
   }, [autoRefreshEnabled]);
 
-  // On change in location
+  // Updates grid context object when location changes
+  // Runs on change in location
   useEffect(() => {
     if (location && grid) {
       grid.setGridOption('context', { homeLoc: location });
@@ -176,14 +168,30 @@ function App() {
     };
   };
 
-  const refresh = () => {
+  const refresh = async () => {
+    let useToken = '';
     const refreshButton = document.getElementById(refreshButtonId);
     if (!refreshButton.disabled) {
       setButtonText('Getting jobs...');
       refreshButton.disabled = true;
 
-      getJobsData(token)
+      // Check for a stored token
+      if (!auth.token) {
+        // Get a new token
+        useToken = await auth.refreshToken();
+      } else {
+        useToken = auth.token;
+      }
+
+      await getJobsData(useToken)
         .then((rawData) => {
+          // Reset failed attempts
+          if (failedAttempts > 0) {
+            console.log(
+              `Token restored after ${failedAttempts} failed attempt(s).`
+            );
+            setFailedAttempts(0);
+          }
           // Perform filtering here
           setButtonText('Refresh');
           setError('');
@@ -195,12 +203,32 @@ function App() {
           }
         })
         .catch((error) => {
-          if (error?.response?.status === 401) {
-            console.log('Token is invalid or expired');
-            setToken('');
+          if (
+            error?.response?.status === 401 ||
+            error?.response?.status === 400
+          ) {
+            if (autoRefreshEnabled) {
+              // Update failed attempts
+              setFailedAttempts(failedAttempts + 1);
+              console.log(
+                `Token is invalid or expired (attempt ${failedAttempts} of 3)`
+              );
+              if (failedAttempts < 3) {
+                // Retry in 5 seconds
+                const interval = intervalValues[autoRefreshInterval].sec;
+                setTimer(interval - 5);
+                setError(`Token error, retrying in 5 seconds.`);
+                auth.refreshToken();
+              } else {
+                setError(`Too many failed attempts, disabling auto refresh.`);
+                console.log(error);
+                setAutoRefreshEnabled(false);
+              }
+            }
+          } else {
+            setError(error);
           }
           setButtonText('Retry');
-          setError(error);
         })
         .finally(() => {
           refreshButton.disabled = false;
