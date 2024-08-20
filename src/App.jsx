@@ -7,6 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
+const appVersion = `v1.2.0`;
 const apiUrl =
   'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&isLikelyFraud=false&latitude=45.533467&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
 const auth = new AuthProvider();
@@ -331,7 +332,7 @@ function App() {
     <>
       <nav>
         <div className="title">
-          Parched<sup>v1.1.0</sup>
+          Parched<sup>{appVersion}</sup>
         </div>
         <div className="error">{error.message}</div>
         <div className="countdown">
