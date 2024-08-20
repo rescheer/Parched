@@ -1,19 +1,13 @@
 /* eslint-disable no-unused-vars */
-export default class TitleRenderer {
+export default class FakeLinkRenderer {
   eGui;
 
   // Optional: Params for rendering. The same params that are passed to the cellRenderer function.
   init(params) {
     if (params.value) {
-      const { url } = params.data;
-
-      let title = document.createElement('a');
-      title.setAttribute('href', url);
-      title.setAttribute('target', '_blank');
-      title.innerHTML = params.value;
-
       this.eGui = document.createElement('span');
-      this.eGui.appendChild(title);
+      this.eGui.setAttribute('class', 'fakeAnchor');
+      this.eGui.innerHTML = params.value;
     }
   }
 

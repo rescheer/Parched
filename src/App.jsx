@@ -8,7 +8,7 @@ import AuthProvider from './class/AuthProvider';
 import './App.css';
 
 const apiUrl =
-  'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&exclude%5B%5D=content&isLikelyFraud=false&latitude=45.533467&limit=999&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
+  'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&isLikelyFraud=false&latitude=45.533467&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
 const auth = new AuthProvider();
 
 /**
