@@ -7,6 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
+const appVersion = `v1.2.0`;
 const apiUrl =
   'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&isLikelyFraud=false&latitude=45.533467&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
 const auth = new AuthProvider();
@@ -22,13 +23,13 @@ async function getJobsData(token) {
     },
   };
 
-  const stream = await fetch(apiUrl, options);
-  const response = await stream.json();
+  return await fetch(apiUrl, options).then((stream) => {
+    if (!stream.ok) {
+      throw new Error(`HTTP error! Status Code: ${stream.status}`);
+    }
 
-  if (response) {
-    return response;
-  }
-  return undefined;
+    return stream.json();
+  });
 }
 
 function toReadableTimer(timeLeft) {
@@ -160,7 +161,7 @@ function App() {
     }
   }, [location, grid]);
 
-  const getContext = () => {
+  const getGridContext = () => {
     const location = document.getElementById(locationId).value;
 
     return {
@@ -201,29 +202,26 @@ function App() {
           } else {
             grid.setGridOption('rowData', rawData.jobs);
           }
+          setTimer(0);
         })
         .catch((error) => {
-          if (
-            error?.response?.status === 401 ||
-            error?.response?.status === 400
-          ) {
-            if (autoRefreshEnabled) {
-              // Update failed attempts
-              setFailedAttempts(failedAttempts + 1);
-              console.log(
-                `Token is invalid or expired (attempt ${failedAttempts} of 3)`
+          if (autoRefreshEnabled) {
+            // Update failed attempts
+            setFailedAttempts(failedAttempts + 1);
+            if (failedAttempts + 1 <= 3) {
+              // Retry in 3 seconds
+              const interval = intervalValues[autoRefreshInterval].sec;
+              setTimer(interval - 3);
+              setError(
+                `Token error, retrying in 3 seconds (${
+                  failedAttempts + 1
+                } of 3)`
               );
-              if (failedAttempts < 3) {
-                // Retry in 5 seconds
-                const interval = intervalValues[autoRefreshInterval].sec;
-                setTimer(interval - 5);
-                setError(`Token error, retrying in 5 seconds.`);
-                auth.refreshToken();
-              } else {
-                setError(`Too many failed attempts, disabling auto refresh.`);
-                console.log(error);
-                setAutoRefreshEnabled(false);
-              }
+              auth.refreshToken();
+            } else {
+              setError(`Too many failed attempts!`);
+              setFailedAttempts(0);
+              setAutoRefreshEnabled(false);
             }
           } else {
             setError(error);
@@ -232,7 +230,6 @@ function App() {
         })
         .finally(() => {
           refreshButton.disabled = false;
-          setTimer(0);
         });
     }
   };
@@ -246,7 +243,7 @@ function App() {
     }
     const gridOptions = {
       rowData: data,
-      context: getContext(),
+      context: getGridContext(),
       resetRowDataOnUpdate: true,
       columnDefs: columnDefs,
     };
@@ -278,19 +275,22 @@ function App() {
       <div className="settings">
         <h2>Settings</h2>
         <h3>Location</h3>
-        <label>Latitude, Longitude: </label>
-        <input
-          id={locationId}
-          defaultValue={location}
-          onChange={(e) => {
-            setLocation(e.target.value);
-            localStorage.setItem('location', e.target.value);
-          }}
-          style={{ width: 270 }}
-        />
+        <label>
+          Latitude, Longitude:<br />
+          <input
+            id={locationId}
+            defaultValue={location}
+            onChange={(e) => {
+              setLocation(e.target.value);
+              localStorage.setItem('location', e.target.value);
+            }}
+            style={{ width: 270 }}
+          />
+        </label>
         <hr />
         <h3>Auto Refresh</h3>
         <input
+          name="autoRefresh"
           type="checkbox"
           checked={autoRefreshEnabled}
           onChange={(e) => {
@@ -299,21 +299,23 @@ function App() {
             localStorage.setItem('autoRefresh', e.target.checked);
           }}
         />
-        Auto Refresh <br />
-        <label>Interval: </label>
-        <input
-          type="range"
-          min={0}
-          max={4}
-          step={1}
-          value={autoRefreshInterval}
-          style={{ width: 150 }}
-          list="ticks"
-          onChange={(e) => {
-            setAutoRefreshInterval(e.target.value);
-            localStorage.setItem('interval', e.target.value);
-          }}
-        />
+        Enabled<br />
+        <label>
+          Interval:<br />
+          <input
+            type="range"
+            min={0}
+            max={4}
+            step={1}
+            value={autoRefreshInterval}
+            style={{ width: 150 }}
+            list="ticks"
+            onChange={(e) => {
+              setAutoRefreshInterval(e.target.value);
+              localStorage.setItem('interval', e.target.value);
+            }}
+          />
+        </label>
         <br />
         {intervalValues[autoRefreshInterval].readable}
         <datalist id="ticks">
@@ -331,9 +333,9 @@ function App() {
     <>
       <nav>
         <div className="title">
-          Parched<sup>v1.1.0</sup>
+          Parched<sup>{appVersion}</sup>
         </div>
-        <div className="error">{error.message}</div>
+        <div className="error">{error}</div>
         <div className="countdown">
           {autoRefreshEnabled
             ? `Auto refresh in ${toReadableTimer(
