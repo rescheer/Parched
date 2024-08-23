@@ -224,7 +224,7 @@ function App() {
               setAutoRefreshEnabled(false);
             }
           } else {
-            setError(error);
+            setError(error.message);
           }
           setButtonText('Retry');
         })
