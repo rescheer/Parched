@@ -221,16 +221,6 @@ function App() {
             );
             setFailedAttempts(0);
           }
-          // Filtering
-          // Remove "Shift" types
-          rawData.jobs.forEach((job, index) => {
-            if (job.typeName == 'Shift') {
-              rawData.jobs.splice(index, 1);
-            }
-            if (job.id == '2542832') {
-              console.log(job);
-            }
-          });
 
           setButtonText('Refresh');
           setError('');
@@ -316,13 +306,14 @@ function App() {
         <h3>Job Category</h3>
         <select
           id={categoryId}
+          value={category}
           onChange={(e) => {
             setCategory(e.target.value);
             localStorage.setItem('category', e.target.value);
           }}
         >
           {categories.map((item) => (
-            <option key={item.name + item.code} value={item.code} selected={item.code == category}>
+            <option key={item.name + item.code} value={item.code}>
               {item.name}
             </option>
           ))}
