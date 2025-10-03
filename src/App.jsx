@@ -7,7 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.3.0`;
+const appVersion = `v1.3.1`;
 
 const defaultParams = {
   category: 51,
@@ -187,6 +187,13 @@ function App() {
       grid.setGridOption('context', { homeLoc: location });
     }
   }, [location, grid]);
+
+  // Refreshes grid data when the job category changes.
+  // Runs on change in category
+  useEffect(() => {
+    refresh();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   const getGridContext = () => {
     const location = document.getElementById(locationId).value;
@@ -401,7 +408,6 @@ function App() {
                 if (e.target.value !== category) {
                   setCategory(e.target.value);
                   localStorage.setItem('category', e.target.value);
-                  refresh();
                 }
               }}
             >
