@@ -192,7 +192,7 @@ function App() {
   // Runs on change in category
   useEffect(() => {
     refresh();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   const getGridContext = () => {
@@ -310,65 +310,68 @@ function App() {
   );
 
   const settingsPage = (
-    <div className="settingsRoot">
-      <div className="settings">
-        <h2>Settings</h2>
-        <h3>Location</h3>
-        <label>
-          Latitude, Longitude:
-          <br />
+    <>
+      <div className="settingsRoot">
+        <div className="settings">
+          <h2>Settings</h2>
+          <h3>Location</h3>
+          <label>
+            Latitude, Longitude:
+            <br />
+            <input
+              id={locationId}
+              defaultValue={location}
+              onChange={(e) => {
+                setLocation(e.target.value);
+                localStorage.setItem('location', e.target.value);
+              }}
+              style={{ width: 270 }}
+            />
+          </label>
+          <hr />
+          <h3>Auto Refresh</h3>
           <input
-            id={locationId}
-            defaultValue={location}
+            name="autoRefresh"
+            type="checkbox"
+            checked={autoRefreshEnabled}
             onChange={(e) => {
-              setLocation(e.target.value);
-              localStorage.setItem('location', e.target.value);
-            }}
-            style={{ width: 270 }}
-          />
-        </label>
-        <hr />
-        <h3>Auto Refresh</h3>
-        <input
-          name="autoRefresh"
-          type="checkbox"
-          checked={autoRefreshEnabled}
-          onChange={(e) => {
-            setTimer(0);
-            setAutoRefreshEnabled(e.target.checked);
-            localStorage.setItem('autoRefresh', e.target.checked);
-          }}
-        />
-        Enabled
-        <br />
-        <label>
-          Interval:
-          <br />
-          <input
-            type="range"
-            min={0}
-            max={4}
-            step={1}
-            value={autoRefreshInterval}
-            style={{ width: 150 }}
-            list="ticks"
-            onChange={(e) => {
-              setAutoRefreshInterval(e.target.value);
-              localStorage.setItem('interval', e.target.value);
+              setTimer(0);
+              setAutoRefreshEnabled(e.target.checked);
+              localStorage.setItem('autoRefresh', e.target.checked);
             }}
           />
-        </label>
-        <br />
-        {intervalValues[autoRefreshInterval].readable}
-        <datalist id="ticks">
-          <option>0</option>
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
-          <option>4</option>
-        </datalist>
+          Enabled
+          <br />
+          <label>
+            Interval:
+            <br />
+            <input
+              type="range"
+              min={0}
+              max={4}
+              step={1}
+              value={autoRefreshInterval}
+              style={{ width: 150 }}
+              list="ticks"
+              onChange={(e) => {
+                setAutoRefreshInterval(e.target.value);
+                localStorage.setItem('interval', e.target.value);
+              }}
+            />
+          </label>
+          <br />
+          {intervalValues[autoRefreshInterval].readable}
+          <datalist id="ticks">
+            <option>0</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+          </datalist>
+        </div>
       </div>
-    </div>
+      <sub>parched by robby scheer in portland, oregon</sub>
+    </>
   );
 
   return (
