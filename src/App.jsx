@@ -221,7 +221,17 @@ function App() {
             );
             setFailedAttempts(0);
           }
-          // Perform filtering here
+          // Filtering
+          // Remove "Shift" types
+          rawData.jobs.forEach((job, index) => {
+            if (job.typeName == 'Shift') {
+              rawData.jobs.splice(index, 1);
+            }
+            if (job.id == '2542832') {
+              console.log(job);
+            }
+          });
+
           setButtonText('Refresh');
           setError('');
           if (!grid) {
@@ -312,7 +322,7 @@ function App() {
           }}
         >
           {categories.map((item) => (
-            <option key={item.name + item.code} value={item.code}>
+            <option key={item.name + item.code} value={item.code} selected={item.code == category}>
               {item.name}
             </option>
           ))}
