@@ -7,15 +7,29 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.2.0`;
-const apiUrl =
-  'https://poachedjobs.com/api/v1/jobs?category=51&distance=15&isLikelyFraud=false&latitude=45.533467&locationLabel=Portland%2C%20OR&longitude=-122.650095&status=publish';
+const appVersion = `v1.3.0`;
+
+const defaultParams = {
+  category: 51,
+  distance: 15,
+  isLikelyFraud: false,
+  latitude: 45.533467,
+  longitude: -122.650095,
+  locationLabel: 'Portland, OR',
+  status: 'publish',
+};
+const categories = [
+  { name: 'Bar', code: 51 },
+  { name: 'Management', code: 52 },
+  { name: 'Floor', code: 54 },
+];
+const apiBaseUrl = 'https://poachedjobs.com/api/v1/jobs?';
 const auth = new AuthProvider();
 
 /**
  * Asynchronously returns jobs data from the Poached API. Returns undefined on failure.
  */
-async function getJobsData(token) {
+async function getJobsData(token, params = {}) {
   const options = {
     method: 'GET',
     headers: {
@@ -23,7 +37,15 @@ async function getJobsData(token) {
     },
   };
 
-  return await fetch(apiUrl, options).then((stream) => {
+  // Encode API URL
+  const paramData = Object.assign(defaultParams, params);
+  const searchParams = new URLSearchParams();
+  Object.entries(paramData).forEach(([key, value]) => {
+    searchParams.append(key, value);
+  });
+  const finalAPIUrl = apiBaseUrl + searchParams.toString();
+
+  return await fetch(finalAPIUrl, options).then((stream) => {
     if (!stream.ok) {
       throw new Error(`HTTP error! Status Code: ${stream.status}`);
     }
@@ -59,6 +81,7 @@ function App() {
   const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Settings States
+  const [category, setCategory] = useState(51);
   const [location, setLocation] = useState(``);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(1);
@@ -93,6 +116,7 @@ function App() {
       { key: 'autoRefresh', value: `` },
       { key: 'interval', value: `` },
       { key: 'location', value: `` },
+      { key: 'category', value: `` },
     ];
     keys.forEach((item) => {
       if (localStorage.getItem(item.key)) {
@@ -110,6 +134,9 @@ function App() {
             break;
           case 'location':
             setLocation(value);
+            break;
+          case 'category':
+            setCategory(value);
             break;
           default:
             break;
@@ -184,8 +211,13 @@ function App() {
         useToken = auth.token;
       }
 
-      await getJobsData(useToken)
+      await getJobsData(useToken, { category: category })
         .then((rawData) => {
+          // Remove Shift job types from data
+          const filteredJobs = rawData.jobs.filter(
+            (job) => job.typeName !== 'Shift'
+          );
+
           // Reset failed attempts
           if (failedAttempts > 0) {
             console.log(
@@ -193,14 +225,13 @@ function App() {
             );
             setFailedAttempts(0);
           }
-          // Perform filtering here
           setButtonText('Refresh');
           setError('');
           if (!grid) {
             // Initialization
-            setGrid(initGrid(rawData.jobs));
+            setGrid(initGrid(filteredJobs));
           } else {
-            grid.setGridOption('rowData', rawData.jobs);
+            grid.setGridOption('rowData', filteredJobs);
           }
           setTimer(0);
         })
@@ -224,6 +255,7 @@ function App() {
               setAutoRefreshEnabled(false);
             }
           } else {
+            auth.clearToken();
             setError(error.message);
           }
           setButtonText('Retry');
@@ -276,7 +308,8 @@ function App() {
         <h2>Settings</h2>
         <h3>Location</h3>
         <label>
-          Latitude, Longitude:<br />
+          Latitude, Longitude:
+          <br />
           <input
             id={locationId}
             defaultValue={location}
@@ -299,9 +332,11 @@ function App() {
             localStorage.setItem('autoRefresh', e.target.checked);
           }}
         />
-        Enabled<br />
+        Enabled
+        <br />
         <label>
-          Interval:<br />
+          Interval:
+          <br />
           <input
             type="range"
             min={0}
@@ -354,6 +389,25 @@ function App() {
           >
             {buttonText}
           </button>
+        </div>
+        <div className="flex-item flex-item-center">
+          {categories.map((item) => (
+            <button
+              key={item.code + item.name}
+              type="button"
+              className={category == item.code ? '' : 'unselectedButton'}
+              value={item.code}
+              onClick={(e) => {
+                if (e.target.value !== category) {
+                  setCategory(e.target.value);
+                  localStorage.setItem('category', e.target.value);
+                  refresh();
+                }
+              }}
+            >
+              {item.name}
+            </button>
+          ))}
         </div>
         <div className="flex-item flex-item-right">
           <button type="button" onClick={toggleSettings}>
