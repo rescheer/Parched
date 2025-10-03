@@ -66,6 +66,10 @@ button {
 button:hover {
   background-color: #2196f3;
 }
+.unselectedButton {
+  color: #555555;
+  border-color: #555555;
+}
 button:disabled {
   background-color: gray;
   border-color: black;

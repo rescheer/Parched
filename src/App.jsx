@@ -7,7 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.2.0`;
+const appVersion = `v1.3.0`;
 
 const defaultParams = {
   category: 51,
@@ -71,7 +71,6 @@ function toReadableTimer(timeLeft) {
 function App() {
   const refreshButtonId = useId();
   const locationId = useId();
-  const categoryId = useId();
 
   // Main States
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -215,7 +214,9 @@ function App() {
       await getJobsData(useToken, { category: category })
         .then((rawData) => {
           // Remove Shift job types from data
-          const filteredJobs = rawData.jobs.filter((job) => (job.typeName !== 'Shift'))
+          const filteredJobs = rawData.jobs.filter(
+            (job) => job.typeName !== 'Shift'
+          );
 
           // Reset failed attempts
           if (failedAttempts > 0) {
@@ -305,22 +306,6 @@ function App() {
     <div className="settingsRoot">
       <div className="settings">
         <h2>Settings</h2>
-        <h3>Job Category</h3>
-        <select
-          id={categoryId}
-          value={category}
-          onChange={(e) => {
-            setCategory(e.target.value);
-            localStorage.setItem('category', e.target.value);
-          }}
-        >
-          {categories.map((item) => (
-            <option key={item.name + item.code} value={item.code}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-        <hr />
         <h3>Location</h3>
         <label>
           Latitude, Longitude:
@@ -404,6 +389,25 @@ function App() {
           >
             {buttonText}
           </button>
+        </div>
+        <div className="flex-item flex-item-center">
+          {categories.map((item) => (
+            <button
+              key={item.code + item.name}
+              type="button"
+              className={category == item.code ? '' : 'unselectedButton'}
+              value={item.code}
+              onClick={(e) => {
+                if (e.target.value !== category) {
+                  setCategory(e.target.value);
+                  localStorage.setItem('category', e.target.value);
+                  refresh();
+                }
+              }}
+            >
+              {item.name}
+            </button>
+          ))}
         </div>
         <div className="flex-item flex-item-right">
           <button type="button" onClick={toggleSettings}>
