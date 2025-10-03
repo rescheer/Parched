@@ -7,7 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.3.0`;
+const appVersion = `v1.3.1`;
 
 const defaultParams = {
   category: 51,
