@@ -214,6 +214,9 @@ function App() {
 
       await getJobsData(useToken, { category: category })
         .then((rawData) => {
+          // Remove Shift job types from data
+          const filteredJobs = rawData.jobs.filter((job) => (job.typeName !== 'Shift'))
+
           // Reset failed attempts
           if (failedAttempts > 0) {
             console.log(
@@ -221,14 +224,13 @@ function App() {
             );
             setFailedAttempts(0);
           }
-
           setButtonText('Refresh');
           setError('');
           if (!grid) {
             // Initialization
-            setGrid(initGrid(rawData.jobs));
+            setGrid(initGrid(filteredJobs));
           } else {
-            grid.setGridOption('rowData', rawData.jobs);
+            grid.setGridOption('rowData', filteredJobs);
           }
           setTimer(0);
         })
