@@ -224,6 +224,7 @@ function App() {
               setAutoRefreshEnabled(false);
             }
           } else {
+            auth.clearToken();
             setError(error.message);
           }
           setButtonText('Retry');

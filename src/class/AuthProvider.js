@@ -69,6 +69,10 @@ export default class AuthProvider {
     return this.#token;
   }
 
+  clearToken() {
+    this.#token = null;
+  }
+
   // Private Methods
   /**
    * Splits a URL into a hostname and a URI
