@@ -188,6 +188,13 @@ function App() {
     }
   }, [location, grid]);
 
+  // Refreshes grid data when the job category changes.
+  // Runs on change in category
+  useEffect(() => {
+    refresh();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
+
   const getGridContext = () => {
     const location = document.getElementById(locationId).value;
 
@@ -401,7 +408,6 @@ function App() {
                 if (e.target.value !== category) {
                   setCategory(e.target.value);
                   localStorage.setItem('category', e.target.value);
-                  refresh();
                 }
               }}
             >
