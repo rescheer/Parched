@@ -7,7 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.3.1`;
+const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const defaultParams = {
   category: 51,
@@ -378,7 +378,7 @@ function App() {
     <>
       <nav>
         <div className="title">
-          Parched<sup>{appVersion}</sup>
+          Parched<sup>v{appVersion}</sup>
         </div>
         <div className="error">{error}</div>
         <div className="countdown">
