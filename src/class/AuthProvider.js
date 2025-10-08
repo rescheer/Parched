@@ -248,4 +248,8 @@ export default class AuthProvider {
   get isInitialized() {
     return this.#initialized;
   }
+
+  get expiration() {
+    return this.#credentials.Expiration;
+  }
 }

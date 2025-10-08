@@ -7,7 +7,7 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.3.1`;
+const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const defaultParams = {
   category: 51,
@@ -210,8 +210,8 @@ function App() {
       setButtonText('Getting jobs...');
       refreshButton.disabled = true;
 
-      // Check for a stored token
-      if (!auth.token) {
+      // Check for a stored, unexpired token
+      if (!auth.token || Date.now() >= auth.expiration * 1000) {
         // Get a new token
         useToken = await auth.refreshToken();
       } else {
@@ -378,7 +378,7 @@ function App() {
     <>
       <nav>
         <div className="title">
-          Parched<sup>{appVersion}</sup>
+          Parched<sup>v{appVersion}</sup>
         </div>
         <div className="error">{error}</div>
         <div className="countdown">
