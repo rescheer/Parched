@@ -7,8 +7,6 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
-const appVersion = `v1.3.1`;
-
 const defaultParams = {
   category: 51,
   distance: 15,
@@ -378,7 +376,8 @@ function App() {
     <>
       <nav>
         <div className="title">
-          Parched<sup>{appVersion}</sup>
+          {/* eslint-disable-next-line no-undef */}
+          Parched<sup>v{APP_VERSION}</sup>
         </div>
         <div className="error">{error}</div>
         <div className="countdown">
