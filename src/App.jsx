@@ -210,8 +210,8 @@ function App() {
       setButtonText('Getting jobs...');
       refreshButton.disabled = true;
 
-      // Check for a stored token
-      if (!auth.token) {
+      // Check for a stored, unexpired token
+      if (!auth.token || Date.now() >= auth.expiration * 1000) {
         // Get a new token
         useToken = await auth.refreshToken();
       } else {
