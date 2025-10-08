@@ -46,7 +46,8 @@ h1 {
 }
 
 sup {
-  font-size: 15px;
+  font-size: 12px;
+  padding-left: 4px;
 }
 
 button {
