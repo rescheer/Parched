@@ -7,6 +7,8 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
+const MOBILE_ROW_HEIGHT = 130;
+const NONMOBILE_ROW_HEIGHT = 42;
 const defaultParams = {
   category: 51,
   distance: 15,
@@ -52,7 +54,7 @@ async function getJobsData(token, params = {}) {
   });
 }
 
-function toReadableTimer(timeLeft) {
+/* function toReadableTimer(timeLeft) {
   let sliceBegin = 14;
   let suffix = ``;
   if (timeLeft <= 60) {
@@ -64,7 +66,7 @@ function toReadableTimer(timeLeft) {
     suffix = `s`;
   }
   return new Date(timeLeft * 1000).toISOString().slice(sliceBegin, 19) + suffix;
-}
+} */
 
 function App() {
   const refreshButtonId = useId();
@@ -72,8 +74,7 @@ function App() {
 
   // Main States
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [buttonText, setButtonText] = useState('Get Jobs');
-  const [error, setError] = useState('');
+  const [buttonText, setButtonText] = useState('refresh');
   const [grid, setGrid] = useState(null);
   const [mobile, setMobile] = useState(window.innerWidth < 1000);
   const [failedAttempts, setFailedAttempts] = useState(0);
@@ -152,11 +153,13 @@ function App() {
           if (window.innerWidth < 1000) {
             if (!mobile) {
               grid.setGridOption('columnDefs', Definitions.mobileColumn);
+              grid.setGridOption('rowHeight', 130);
               setMobile(true);
             }
           } else {
             if (mobile) {
               grid.setGridOption('columnDefs', Definitions.nonMobileColumn);
+              grid.setGridOption('rowHeight', 42);
               setMobile(false);
             }
           }
@@ -205,7 +208,7 @@ function App() {
     let useToken = '';
     const refreshButton = document.getElementById(refreshButtonId);
     if (!refreshButton.disabled) {
-      setButtonText('Getting jobs...');
+      setButtonText('cancel');
       refreshButton.disabled = true;
 
       // Check for a stored, unexpired token
@@ -230,8 +233,7 @@ function App() {
             );
             setFailedAttempts(0);
           }
-          setButtonText('Refresh');
-          setError('');
+          setButtonText('refresh');
           if (!grid) {
             // Initialization
             setGrid(initGrid(filteredJobs));
@@ -241,6 +243,7 @@ function App() {
           setTimer(0);
         })
         .catch((error) => {
+          console.log(error);
           if (autoRefreshEnabled) {
             // Update failed attempts
             setFailedAttempts(failedAttempts + 1);
@@ -248,22 +251,15 @@ function App() {
               // Retry in 3 seconds
               const interval = intervalValues[autoRefreshInterval].sec;
               setTimer(interval - 3);
-              setError(
-                `Token error, retrying in 3 seconds (${
-                  failedAttempts + 1
-                } of 3)`
-              );
               auth.refreshToken();
             } else {
-              setError(`Too many failed attempts!`);
               setFailedAttempts(0);
               setAutoRefreshEnabled(false);
             }
           } else {
             auth.clearToken();
-            setError(error.message);
           }
-          setButtonText('Retry');
+          setButtonText('refresh');
         })
         .finally(() => {
           refreshButton.disabled = false;
@@ -273,8 +269,10 @@ function App() {
 
   function initGrid(data) {
     let columnDefs;
+    let rowHeight = NONMOBILE_ROW_HEIGHT;
     if (window.innerWidth < 1000) {
       columnDefs = Definitions.mobileColumn;
+      rowHeight = MOBILE_ROW_HEIGHT;
     } else {
       columnDefs = Definitions.nonMobileColumn;
     }
@@ -283,6 +281,7 @@ function App() {
       context: getGridContext(),
       resetRowDataOnUpdate: true,
       columnDefs: columnDefs,
+      rowHeight,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
@@ -326,7 +325,7 @@ function App() {
               style={{ width: 270 }}
             />
           </label>
-          <hr />
+          {/* <hr />
           <h3>Auto Refresh</h3>
           <input
             name="autoRefresh"
@@ -365,7 +364,7 @@ function App() {
             <option>2</option>
             <option>3</option>
             <option>4</option>
-          </datalist>
+          </datalist> */}
         </div>
       </div>
       <sub>parched by robby scheer in portland, oregon</sub>
@@ -379,26 +378,29 @@ function App() {
           {/* eslint-disable-next-line no-undef */}
           Parched<sup>v{APP_VERSION}</sup>
         </div>
-        <div className="error">{error}</div>
+        {/* <div className="error">{error}errortext</div>
         <div className="countdown">
+          timer
           {autoRefreshEnabled
             ? `Auto refresh in ${toReadableTimer(
                 intervalValues[autoRefreshInterval].sec - timer
               )}`
             : `\u00A0`}
+        </div> */}
+        <div className="navButtons">
+          <button type="button" onClick={refresh} id={refreshButtonId}>
+            <span className="material-icons" style={{ fontSize: 25 }}>
+              {buttonText}
+            </span>
+          </button>
+          <button type="button" onClick={toggleSettings}>
+            <span className="material-icons" style={{ fontSize: 25 }}>
+              {settingsOpen ? 'home' : 'settings'}
+            </span>
+          </button>
         </div>
       </nav>
       <div className="flex-container">
-        <div className="flex-item flex-item-left">
-          <button
-            type="button"
-            onClick={refresh}
-            style={{ width: 200 }}
-            id={refreshButtonId}
-          >
-            {buttonText}
-          </button>
-        </div>
         <div className="flex-item flex-item-center">
           {categories.map((item) => (
             <button
@@ -416,13 +418,6 @@ function App() {
               {item.name}
             </button>
           ))}
-        </div>
-        <div className="flex-item flex-item-right">
-          <button type="button" onClick={toggleSettings}>
-            <span className="material-icons" style={{ fontSize: 25 }}>
-              {settingsOpen ? 'home' : 'settings'}
-            </span>
-          </button>
         </div>
       </div>
       <div style={{ display: settingsOpen ? 'none' : 'block' }}>{gridPage}</div>

@@ -1,5 +1,7 @@
 import LogoRenderer from '../renderer/LogoRenderer';
 import FakeLinkRenderer from '../renderer/FakeLinkRenderer';
+import MobileCellRenderer from '../renderer/MobileCellRenderer';
+import timeSinceString from '../common/timeSinceString';
 
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
@@ -18,32 +20,6 @@ function getDistanceInMiles(lat1, lon1, lat2, lon2) {
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   var d = R * c; // Distance in km
   return d / 1.609;
-}
-
-function timeSinceString(time) {
-  const periods = {
-    month: 30 * 24 * 60 * 60 * 1000,
-    week: 7 * 24 * 60 * 60 * 1000,
-    day: 24 * 60 * 60 * 1000,
-    hour: 60 * 60 * 1000,
-    minute: 60 * 1000,
-  };
-
-  const diff = Date.now() - time;
-
-  if (diff > periods.month) {
-    // it was at least a month ago
-    return Math.floor(diff / periods.month) + 'mo ago';
-  } else if (diff > periods.week) {
-    return Math.floor(diff / periods.week) + 'w ago';
-  } else if (diff > periods.day) {
-    return Math.floor(diff / periods.day) + 'd ago';
-  } else if (diff > periods.hour) {
-    return Math.floor(diff / periods.hour) + 'h ago';
-  } else if (diff > periods.minute) {
-    return Math.floor(diff / periods.minute) + 'm ago';
-  }
-  return 'Just now';
 }
 
 function getDistanceFromMe(homeLoc, lat, long) {
@@ -151,15 +127,38 @@ const col = {
   },
 };
 
+const mobileCol = {
+  main: {
+    field: 'main',
+    headerName: 'Jobs',
+    flex: 1,
+    valueGetter: (cb) => cb.data,
+    cellRenderer: MobileCellRenderer,
+    sort: 'asc',
+    comparator: (valueA, valueB, nodeA, nodeB) => {
+      const timeA = new Date(nodeA.data.postDate).getTime();
+      const timeB = new Date(nodeB.data.postDate).getTime();
+
+      if (timeB < timeA) {
+        return -1; // dateA comes before dateB
+      } else if (timeB > timeA) {
+        return 1; // dateA comes after dateB
+      } else {
+        return 0; // dates are equal
+      }
+    },
+  },
+};
+
 export const nonMobileColumn = [
   col.logoUrl,
   col.company,
   col.title,
   col.postDate,
-  col.typeName,
+  // col.typeName,
   col.city,
   col.distance,
-  col.jobViews,
+  // col.jobViews,
 ];
 
-export const mobileColumn = [col.company, col.title, col.postDate];
+export const mobileColumn = [mobileCol.main];
