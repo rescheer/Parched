@@ -159,7 +159,7 @@ export const nonMobileColumn = [
   col.typeName,
   col.city,
   col.distance,
-  col.jobViews,
+  // col.jobViews,
 ];
 
 export const mobileColumn = [col.company, col.title, col.postDate];
