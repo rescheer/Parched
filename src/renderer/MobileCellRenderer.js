@@ -10,10 +10,17 @@ export default class MobileCellRenderer {
     if (params.value) {
       const cell = document.createElement('div');
 
-      const company = document.createElement('a');
-      company.setAttribute('href', params.value.googlePlaceurl);
-      company.setAttribute('target', '_blank');
-      company.innerHTML = params.value.company + ' (' + params.value.city + ') <br>';
+      let company;
+      if (params.value.company) {
+        company = document.createElement('a');
+        company.setAttribute('href', params.value.googlePlaceurl);
+        company.setAttribute('target', '_blank');
+        company.innerHTML = params.value.company + ' (' + params.value.city + ') <br>';
+      } else {
+        company = document.createElement('span');
+        company.setAttribute('target', '_blank');
+        company.innerHTML = 'Company Not Provided (' + params.value.city + ') <br>';
+      }
 
       const title = document.createElement('a');
       title.setAttribute('href', params.value.url);
