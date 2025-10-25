@@ -152,11 +152,13 @@ function App() {
           if (window.innerWidth < 1000) {
             if (!mobile) {
               grid.setGridOption('columnDefs', Definitions.mobileColumn);
+              grid.setGridOption('rowHeight', 130)
               setMobile(true);
             }
           } else {
             if (mobile) {
               grid.setGridOption('columnDefs', Definitions.nonMobileColumn);
+              grid.setGridOption('rowHeight', 42)
               setMobile(false);
             }
           }
