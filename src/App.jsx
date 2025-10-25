@@ -7,6 +7,8 @@ import * as Definitions from './config/definitions';
 import AuthProvider from './class/AuthProvider';
 import './App.css';
 
+const MOBILE_ROW_HEIGHT = 130;
+const NONMOBILE_ROW_HEIGHT = 42;
 const defaultParams = {
   category: 51,
   distance: 15,
@@ -267,8 +269,10 @@ function App() {
 
   function initGrid(data) {
     let columnDefs;
+    let rowHeight = NONMOBILE_ROW_HEIGHT;
     if (window.innerWidth < 1000) {
       columnDefs = Definitions.mobileColumn;
+      rowHeight = MOBILE_ROW_HEIGHT;
     } else {
       columnDefs = Definitions.nonMobileColumn;
     }
@@ -277,6 +281,7 @@ function App() {
       context: getGridContext(),
       resetRowDataOnUpdate: true,
       columnDefs: columnDefs,
+      rowHeight,
     };
 
     return createGrid(document.getElementById('dataGrid'), gridOptions);
