@@ -74,7 +74,7 @@ function App() {
   const [jobCategory, setJobCategory] = useState(51);
   const [location, setLocation] = useState(``);
   const [refreshButtonText, setRefreshButtonText] = useState('refresh');
-  const [homeButtonText, setHomeButtonText] = useState('home');
+  const [homeButtonText, setHomeButtonText] = useState('settings');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
   const [mobileSelectorShown, setMobileSelectorShown] = useState(false);
 
@@ -104,8 +104,6 @@ function App() {
         }
       }
     });
-    setGrid(initGrid([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Listens for resize events and updates grid display mode
@@ -142,7 +140,8 @@ function App() {
     if (location && grid) {
       grid.setGridOption('context', { homeLoc: location });
     }
-  }, [location, grid]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
 
   // Refreshes grid data when the job category changes.
   // Runs on change in category
