@@ -1,5 +1,5 @@
-import PageGrid from './pageGrid';
-import PageSettings from './pageSettings';
+import PageGrid from './PageGrid';
+import PageSettings from './PageSettings';
 
 export default function Content({
   locationFieldId,
