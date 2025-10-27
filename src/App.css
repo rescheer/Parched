@@ -3,6 +3,13 @@ nav {
   padding-right: 1rem;
   height: 6vh;
   background-color: #000000;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  flex-basis: 0;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 2 !important;
 }
 
 button {
@@ -41,6 +48,23 @@ a:hover {
   color: #535bf2;
 }
 
+.mobile-selector {
+  width: 100vw;
+  position: sticky;
+  position: absolute;
+  overflow: hidden;
+  top: 5vh;
+  max-height: 0;
+  background-color: #000000;
+  z-index: -1 !important;
+  transition: max-height 0.5s ease-in-out;
+}
+
+.mobile-selector.show {
+  max-height: 100vh;
+
+}
+
 .full-height {
   flex: 1;
 }
@@ -72,15 +96,6 @@ a:hover {
   height: 100%;
   padding-left: 0;
   padding-right: 0;
-}
-
-.nav-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  flex-basis: 0;
-  justify-content: space-around;
-  align-items: center;
 }
 
 .nav-item {
