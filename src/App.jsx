@@ -140,7 +140,7 @@ function App() {
     if (location && grid) {
       grid.setGridOption('context', { homeLoc: location });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
   // Refreshes grid data when the job category changes.
@@ -202,11 +202,9 @@ function App() {
   };
 
   const getGridContext = () => {
-    const location = document.getElementById(reactIds.locationField).value;
+    const homeLoc = document.getElementById(reactIds.locationField).value;
 
-    return {
-      homeLoc: location,
-    };
+    return { homeLoc };
   };
 
   const refresh = async () => {
