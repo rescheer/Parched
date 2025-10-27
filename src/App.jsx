@@ -81,9 +81,7 @@ function App() {
   // Error states
   const [failedAttempts, setFailedAttempts] = useState(0);
 
-  // --------
   // Hooks
-  // --------
   // Checks for stored values from a previous session & initalize ag-grid
   // Run once on mount
   useEffect(() => {
