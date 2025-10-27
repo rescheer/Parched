@@ -19,11 +19,7 @@ export default function Content({
         className="full-height"
         style={{ display: page === 'settings' ? 'block' : 'none' }}
       >
-        <PageSettings
-          reactIds={reactIds}
-          location={location}
-          handleLocationChange={handleLocationChange}
-        />
+        <PageSettings {...{ reactIds, location, handleLocationChange }} />
       </div>
     </div>
   );

@@ -283,22 +283,26 @@ function App() {
   return (
     <>
       <Navbar
-        reactIds={reactIds}
-        isMobile={isMobile}
-        mobileSelectorShown={mobileSelectorShown}
-        handleMobileSelectorToggle={handleMobileSelectorToggle}
-        jobCategory={jobCategory}
-        refreshButtonText={refreshButtonText}
-        homeButtonText={homeButtonText}
-        handleJobCategoryChange={handleJobCategoryChange}
-        handlePageChange={handlePageChange}
-        handleRefresh={handleRefresh}
+        {...{
+          reactIds,
+          isMobile,
+          mobileSelectorShown,
+          handleMobileSelectorToggle,
+          jobCategory,
+          refreshButtonText,
+          homeButtonText,
+          handleJobCategoryChange,
+          handlePageChange,
+          handleRefresh,
+        }}
       />
       <Content
-        reactIds={reactIds}
-        page={page}
-        location={location}
-        handleLocationChange={handleLocationChange}
+        {...{
+          reactIds,
+          page,
+          location,
+          handleLocationChange,
+        }}
       />
     </>
   );

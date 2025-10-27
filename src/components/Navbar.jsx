@@ -24,12 +24,14 @@ export default function Navbar({
 
       {/* Category Selector */}
       <CategorySelector
-        reactIds={reactIds}
-        isMobile={isMobile}
-        mobileSelectorShown={mobileSelectorShown}
-        jobCategory={jobCategory}
-        handleJobCategoryChange={handleJobCategoryChange}
-        handleMobileSelectorToggle={handleMobileSelectorToggle}
+        {...{
+          reactIds,
+          isMobile,
+          mobileSelectorShown,
+          jobCategory,
+          handleJobCategoryChange,
+          handleMobileSelectorToggle,
+        }}
       />
 
       {/* Nav Buttons */}
