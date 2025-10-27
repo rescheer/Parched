@@ -62,11 +62,14 @@ a:hover {
 
 .mobile-selector.show {
   max-height: 100vh;
-
 }
 
 .full-height {
   flex: 1;
+}
+
+.no-select {
+  user-select: none;
 }
 
 .nav-button {

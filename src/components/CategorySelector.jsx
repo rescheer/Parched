@@ -33,7 +33,7 @@ export default function CategorySelector({
 
   if (!isMobile) {
     const categoryList = getCategoryButtonMap(false);
-    return <div className="nav-item nav-item-center">{categoryList}</div>;
+    return <div className="nav-item nav-item-center no-select">{categoryList}</div>;
   } else {
     const categoryList = getCategoryButtonMap(true);
     return (
