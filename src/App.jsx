@@ -19,9 +19,14 @@ const defaultParams = {
   status: 'publish',
 };
 const categories = [
-  { name: 'Bar', code: 51 },
-  { name: 'Management', code: 52 },
   { name: 'Floor', code: 54 },
+  { name: 'Bar', code: 51 },
+  { name: 'Kitchen', code: 53 },
+  { name: 'Management', code: 52 },
+  { name: 'Barista', code: 16 },
+  { name: 'Counter', code: 382 },
+  { name: 'Hotel', code: 166 },
+  { name: 'Distributor', code: 413 },
 ];
 const apiBaseUrl = 'https://poachedjobs.com/api/v1/jobs?';
 const auth = new AuthProvider();
@@ -45,75 +50,35 @@ async function getJobsData(token, params = {}) {
   });
   const finalAPIUrl = apiBaseUrl + searchParams.toString();
 
-  return await fetch(finalAPIUrl, options).then((stream) => {
-    if (!stream.ok) {
-      throw new Error(`HTTP error! Status Code: ${stream.status}`);
-    }
+    return await fetch(finalAPIUrl, options).then((stream) => {
+      if (!stream.ok) {
+        throw new Error(`HTTP error! Status Code: ${stream.status}`);
+      }
 
-    return stream.json();
-  });
+      return stream.json();
+    });
 }
-
-/* function toReadableTimer(timeLeft) {
-  let sliceBegin = 14;
-  let suffix = ``;
-  if (timeLeft <= 60) {
-    if (timeLeft <= 9) {
-      sliceBegin = 18;
-    } else {
-      sliceBegin = 17;
-    }
-    suffix = `s`;
-  }
-  return new Date(timeLeft * 1000).toISOString().slice(sliceBegin, 19) + suffix;
-} */
 
 function App() {
   const refreshButtonId = useId();
   const locationId = useId();
 
   // Main States
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [page, setPage] = useState('grid');
   const [buttonText, setButtonText] = useState('refresh');
   const [grid, setGrid] = useState(null);
   const [mobile, setMobile] = useState(window.innerWidth < 1000);
   const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Settings States
-  const [category, setCategory] = useState(51);
+  const [currentCategory, setCurrentCategory] = useState(51);
   const [location, setLocation] = useState(``);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState(1);
-
-  // Auto Refresh States
-  const [timer, setTimer] = useState(0);
-
-  const intervalValues = [
-    { sec: 30, readable: '30 sec' },
-    { sec: 60 - 1, readable: '1 min' },
-    { sec: 10 * 60, readable: '10 min' },
-    { sec: 30 * 60, readable: '30 min' },
-    { sec: 60 * 60 - 1, readable: '1 hour' },
-  ];
 
   // Hooks
-  // Set up timer for auto refresh
-  // Run once on mount
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTimer((prevTimer) => prevTimer + 1);
-    }, 1000);
-
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, []);
-
   // Checks for stored values from a previous session
   // Run once on mount
   useEffect(() => {
     const keys = [
-      { key: 'autoRefresh', value: `` },
-      { key: 'interval', value: `` },
       { key: 'location', value: `` },
       { key: 'category', value: `` },
     ];
@@ -121,21 +86,11 @@ function App() {
       if (localStorage.getItem(item.key)) {
         const value = localStorage.getItem(item.key);
         switch (item.key) {
-          case 'autoRefresh':
-            if (value === 'true') {
-              setAutoRefreshEnabled(true);
-            } else if (value === 'false') {
-              setAutoRefreshEnabled(false);
-            }
-            break;
-          case 'interval':
-            setAutoRefreshInterval(value);
-            break;
           case 'location':
             setLocation(value);
             break;
           case 'category':
-            setCategory(value);
+            setCurrentCategory(value);
             break;
           default:
             break;
@@ -154,12 +109,14 @@ function App() {
             if (!mobile) {
               grid.setGridOption('columnDefs', Definitions.mobileColumn);
               grid.setGridOption('rowHeight', 130);
+              if (page === 'settings') setPage('grid');
               setMobile(true);
             }
           } else {
             if (mobile) {
               grid.setGridOption('columnDefs', Definitions.nonMobileColumn);
               grid.setGridOption('rowHeight', 42);
+              if (page === 'modal') setPage('grid');
               setMobile(false);
             }
           }
@@ -170,16 +127,7 @@ function App() {
     window.addEventListener('resize', resize);
 
     return () => window.removeEventListener('resize', resize);
-  }, [grid, mobile]);
-
-  // Resets elapsed time when autoRefreshEnabled state changes
-  // Runs on change in autoRefreshEnabled
-  useEffect(() => {
-    if (autoRefreshEnabled) {
-      localStorage.setItem('autoRefresh', autoRefreshEnabled);
-      setTimer(0);
-    }
-  }, [autoRefreshEnabled]);
+  }, [grid, mobile, page]);
 
   // Updates grid context object when location changes
   // Runs on change in location
@@ -194,7 +142,7 @@ function App() {
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
+  }, [currentCategory]);
 
   const getGridContext = () => {
     const location = document.getElementById(locationId).value;
@@ -219,7 +167,7 @@ function App() {
         useToken = auth.token;
       }
 
-      await getJobsData(useToken, { category: category })
+      await getJobsData(useToken, { category: currentCategory })
         .then((rawData) => {
           // Remove Shift job types from data
           const filteredJobs = rawData.jobs.filter(
@@ -240,25 +188,9 @@ function App() {
           } else {
             grid.setGridOption('rowData', filteredJobs);
           }
-          setTimer(0);
         })
         .catch((error) => {
           console.log(error);
-          if (autoRefreshEnabled) {
-            // Update failed attempts
-            setFailedAttempts(failedAttempts + 1);
-            if (failedAttempts + 1 <= 3) {
-              // Retry in 3 seconds
-              const interval = intervalValues[autoRefreshInterval].sec;
-              setTimer(interval - 3);
-              auth.refreshToken();
-            } else {
-              setFailedAttempts(0);
-              setAutoRefreshEnabled(false);
-            }
-          } else {
-            auth.clearToken();
-          }
           setButtonText('refresh');
         })
         .finally(() => {
@@ -268,6 +200,9 @@ function App() {
   };
 
   function initGrid(data) {
+    // Empty the dataGrid element just in case
+    document.getElementById('dataGrid').innerHTML = '';
+
     let columnDefs;
     let rowHeight = NONMOBILE_ROW_HEIGHT;
     if (window.innerWidth < 1000) {
@@ -288,21 +223,20 @@ function App() {
   }
 
   const toggleSettings = () => {
-    setSettingsOpen(!settingsOpen);
+    if (page !== 'settings') {
+      setPage('settings');
+    } else {
+      setPage('grid');
+    }
   };
 
-  if (autoRefreshEnabled && timer >= intervalValues[autoRefreshInterval].sec) {
-    setTimer(0);
-    refresh();
-  }
-
   // JSX
-  const gridHeight = window.innerHeight - 115;
+  // -- Pages
   const gridPage = (
     <div
       id="dataGrid"
       className="ag-theme-quartz-dark"
-      style={{ height: gridHeight }}
+      style={{ height: '100%', wrapperBorderRadius: 0, borderRadius: 0 }}
     />
   );
 
@@ -325,105 +259,122 @@ function App() {
               style={{ width: 270 }}
             />
           </label>
-          {/* <hr />
-          <h3>Auto Refresh</h3>
-          <input
-            name="autoRefresh"
-            type="checkbox"
-            checked={autoRefreshEnabled}
-            onChange={(e) => {
-              setTimer(0);
-              setAutoRefreshEnabled(e.target.checked);
-              localStorage.setItem('autoRefresh', e.target.checked);
-            }}
-          />
-          Enabled
-          <br />
-          <label>
-            Interval:
-            <br />
-            <input
-              type="range"
-              min={0}
-              max={4}
-              step={1}
-              value={autoRefreshInterval}
-              style={{ width: 150 }}
-              list="ticks"
-              onChange={(e) => {
-                setAutoRefreshInterval(e.target.value);
-                localStorage.setItem('interval', e.target.value);
-              }}
-            />
-          </label>
-          <br />
-          {intervalValues[autoRefreshInterval].readable}
-          <datalist id="ticks">
-            <option>0</option>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-          </datalist> */}
         </div>
       </div>
       <sub>parched by robby scheer in portland, oregon</sub>
     </>
   );
 
-  return (
-    <>
-      <nav>
-        <div className="title">
-          {/* eslint-disable-next-line no-undef */}
-          Parched<sup>v{APP_VERSION}</sup>
-        </div>
-        {/* <div className="error">{error}errortext</div>
-        <div className="countdown">
-          timer
-          {autoRefreshEnabled
-            ? `Auto refresh in ${toReadableTimer(
-                intervalValues[autoRefreshInterval].sec - timer
-              )}`
-            : `\u00A0`}
-        </div> */}
-        <div className="navButtons">
-          <button type="button" onClick={refresh} id={refreshButtonId}>
-            <span className="material-icons" style={{ fontSize: 25 }}>
-              {buttonText}
+  // --Components
+  const categoryList = categories.map((item, index) => (
+    <span key={item.code + item.name}>
+      <button
+        type="button"
+        className={currentCategory == item.code ? '' : 'unselectedButton'}
+        value={item.code}
+        onClick={(e) => {
+          if (e.target.value !== currentCategory) {
+            setCurrentCategory(e.target.value);
+            localStorage.setItem('category', e.target.value);
+          }
+          if (page === 'modal') setPage('grid');
+        }}
+      >
+        {item.name}
+      </button>
+      {index < categories.length - 1 ? mobile ? <br /> : ' | ' : ''}
+    </span>
+  ));
+
+  const categorySelector = (
+    <div className="nav-item nav-item-center">{categoryList}</div>
+  );
+
+  const mobileCategorySelector = (
+    <div className="nav-item nav-item-center">
+      <button
+        type="button"
+        onClick={() => {
+          if (page === 'modal') {
+            setPage('grid');
+          } else {
+            setPage('modal');
+          }
+        }}
+      >
+        {categories.find((item) => item.code == currentCategory)?.name}
+        <span className="material-icons" style={{ fontSize: '1em' }}>
+          arrow_drop_down
+        </span>
+      </button>
+    </div>
+  );
+
+  const navBar = (
+    <nav className="nav-container">
+      {/* Title */}
+      <span className="nav-item-left title">
+        Parched
+        {/* eslint-disable-next-line no-undef */}
+        <span className="version"> v{APP_VERSION}</span>
+      </span>
+
+      {/* Category Selector */}
+      {mobile ? mobileCategorySelector : categorySelector}
+
+      {/* Nav Buttons */}
+      <div className="nav-item-right">
+        <button
+          className="nav-button"
+          type="button"
+          onClick={refresh}
+          id={refreshButtonId}
+        >
+          <span className="material-icons">{buttonText}</span>
+        </button>
+        {!mobile ? (
+          <button className="nav-button" type="button" onClick={toggleSettings}>
+            <span className="material-icons">
+              {page === 'settings' ? 'home' : 'settings'}
             </span>
           </button>
-          <button type="button" onClick={toggleSettings}>
-            <span className="material-icons" style={{ fontSize: 25 }}>
-              {settingsOpen ? 'home' : 'settings'}
-            </span>
-          </button>
-        </div>
-      </nav>
-      <div className="flex-container">
-        <div className="flex-item flex-item-center">
-          {categories.map((item) => (
-            <button
-              key={item.code + item.name}
-              type="button"
-              className={category == item.code ? '' : 'unselectedButton'}
-              value={item.code}
-              onClick={(e) => {
-                if (e.target.value !== category) {
-                  setCategory(e.target.value);
-                  localStorage.setItem('category', e.target.value);
-                }
-              }}
-            >
-              {item.name}
-            </button>
-          ))}
-        </div>
+        ) : (
+          ''
+        )}
       </div>
-      <div style={{ display: settingsOpen ? 'none' : 'block' }}>{gridPage}</div>
-      <div style={{ display: !settingsOpen ? 'none' : 'block' }}>
+    </nav>
+  );
+
+  const content = (
+    <div className="content">
+      <div
+        className="full-height"
+        style={{
+          display: page === 'modal' ? 'block' : 'none',
+          backgroundColor: 'black',
+        }}
+      >
+        {categoryList}
+      </div>
+      <div
+        className="full-height"
+        style={{ display: page === 'grid' ? 'block' : 'none' }}
+      >
+        {gridPage}
+      </div>
+      <div
+        className="full-height"
+        style={{ display: page === 'settings' ? 'block' : 'none' }}
+      >
         {settingsPage}
       </div>
+    </div>
+  );
+
+  return (
+    <>
+      {navBar}
+      {content}
     </>
   );
 }

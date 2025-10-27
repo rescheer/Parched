@@ -1,21 +1,81 @@
-#root {
-  width: 100%;
-  margin: 0 auto;
-  padding: 1rem;
+nav {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  height: 6vh;
+  background-color: #000000;
+}
+
+button {
+  height: 5vh;
+  border: 0px transparent;
   padding-top: 0;
-  text-align: center;
+  padding-bottom: 0;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #ffffff;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  border-color: #ffffff;
+  cursor: pointer;
+  transition: 0.25s;
+}
+button:hover {
+  color: #2196f3;
+}
+.unselectedButton {
+  color: #555555;
+  border-color: #555555;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+.full-height {
+  flex: 1;
+}
+
+.nav-button {
+  font-size: 1.5em;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .title {
   font-size: 1.5em;
+  line-height: 1.5em;
   text-align: left;
   padding: 0;
 }
 
-.flex-container {
+.version {
+  font-size: 0.5em;
+  line-height: 0.5em;
+  text-align: left;
+  padding: 0;
+}
+
+.content {
   display: flex;
-  padding-bottom: 5px;
-  padding-top: 23px;
+  flex-direction: column;
+  width: 100vw;
+  height: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.nav-container {
+  display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   flex-basis: 0;
@@ -23,16 +83,16 @@
   align-items: center;
 }
 
-.flex-item {
+.nav-item {
   flex-grow: 1;
   flex-basis: 0;
 }
 
-.flex-item-left {
+.nav-item-left {
   text-align: left;
 }
 
-.flex-item-right {
+.nav-item-right {
   text-align: end;
 }
 
@@ -46,32 +106,6 @@
   object-fit: contain;
   padding: 0;
   margin: 0;
-}
-
-.error {
-  display: block;
-  padding-top: 4px;
-  top: 0;
-  color: red;
-  font-size: small;
-  font-weight: 700;
-  text-align: left;
-}
-
-.countdown {
-  display: block;
-  padding-top: 4px;
-  top: 0;
-  font-size: small;
-  font-weight: 700;
-  text-align: left;
-}
-
-.navButtons {
-  position: absolute;
-  padding-top: 4px;
-  top: 0;
-  right: 0;
 }
 
 .fakeAnchor {
