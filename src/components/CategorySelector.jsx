@@ -46,7 +46,7 @@ export default function CategorySelector({
             </span>
           </button>
         </div>
-        <div className="mobile-selector" id={reactIds.mobileSelectorDiv}>
+        <div className="nav-item nav-item-center mobile-selector" id={reactIds.mobileSelectorDiv}>
           {categoryList}
         </div>
       </>

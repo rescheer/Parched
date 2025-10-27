@@ -13,29 +13,32 @@ export default function Navbar({
   handlePageChange,
   handleRefresh,
 }) {
+  let mobileFlex = isMobile ? ' mobile-flex' : '';
   return (
     <nav>
       {/* Title */}
-      <span className="nav-item-left title">
+      <span className={'nav-item-left title' + mobileFlex}>
         Parched
         {/* eslint-disable-next-line no-undef */}
         <span className="version"> v{APP_VERSION}</span>
       </span>
 
       {/* Category Selector */}
-      <CategorySelector
-        {...{
-          reactIds,
-          isMobile,
-          mobileSelectorShown,
-          jobCategory,
-          handleJobCategoryChange,
-          handleMobileSelectorToggle,
-        }}
-      />
+      <span className={'nav-item-center' + mobileFlex}>
+        <CategorySelector
+          {...{
+            reactIds,
+            isMobile,
+            mobileSelectorShown,
+            jobCategory,
+            handleJobCategoryChange,
+            handleMobileSelectorToggle,
+          }}
+        />
+      </span>
 
       {/* Nav Buttons */}
-      <div className="nav-item-right">
+      <div className={'nav-item-right' + mobileFlex}>
         <button
           className="nav-button"
           type="button"
