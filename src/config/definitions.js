@@ -118,6 +118,7 @@ const col = {
       }
     },
     flex: 1,
+    filter: 'agNumberColumnFilter',
   },
   jobViews: {
     field: 'jobViews',

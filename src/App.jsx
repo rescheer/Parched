@@ -1,10 +1,19 @@
-import { useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { createGrid } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
+// Config
 import * as Definitions from './config/definitions';
+
+// Classes
 import AuthProvider from './class/AuthProvider';
+
+// Components
+import Navbar from './components/Navbar';
+import Content from './components/Content';
+
+// Style
 import './App.css';
 
 const MOBILE_ROW_HEIGHT = 130;
@@ -18,11 +27,7 @@ const defaultParams = {
   locationLabel: 'Portland, OR',
   status: 'publish',
 };
-const categories = [
-  { name: 'Bar', code: 51 },
-  { name: 'Management', code: 52 },
-  { name: 'Floor', code: 54 },
-];
+
 const apiBaseUrl = 'https://poachedjobs.com/api/v1/jobs?';
 const auth = new AuthProvider();
 
@@ -54,66 +59,166 @@ async function getJobsData(token, params = {}) {
   });
 }
 
-/* function toReadableTimer(timeLeft) {
-  let sliceBegin = 14;
-  let suffix = ``;
-  if (timeLeft <= 60) {
-    if (timeLeft <= 9) {
-      sliceBegin = 18;
-    } else {
-      sliceBegin = 17;
-    }
-    suffix = `s`;
-  }
-  return new Date(timeLeft * 1000).toISOString().slice(sliceBegin, 19) + suffix;
-} */
-
 function App() {
+  // Element IDs
   const refreshButtonId = useId();
-  const locationId = useId();
+  const locationFieldId = useId();
+  const mobileSelectorDivId = useId();
 
-  // Main States
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [buttonText, setButtonText] = useState('refresh');
+  // Data States
   const [grid, setGrid] = useState(null);
-  const [mobile, setMobile] = useState(window.innerWidth < 1000);
+
+  // UI States
+  const [page, setPage] = useState('grid');
+  const [jobCategory, setJobCategory] = useState(51);
+  const [location, setLocation] = useState(``);
+  const [refreshButtonText, setRefreshButtonText] = useState('refresh');
+  const [homeButtonText, setHomeButtonText] = useState('settings');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1000);
+  const [mobileSelectorShown, setMobileSelectorShown] = useState(false);
+
+  // Error states
   const [failedAttempts, setFailedAttempts] = useState(0);
 
-  // Settings States
-  const [category, setCategory] = useState(51);
-  const [location, setLocation] = useState(``);
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState(1);
+  // Main refresh function
+  const refresh = useCallback(async () => {
+    const initGrid = (data) => {
+      // Empty the dataGrid element just in case
+      document.getElementById('dataGrid').innerHTML = '';
 
-  // Auto Refresh States
-  const [timer, setTimer] = useState(0);
+      let columnDefs;
+      let rowHeight = NONMOBILE_ROW_HEIGHT;
+      if (window.innerWidth < 1000) {
+        columnDefs = Definitions.mobileColumn;
+        rowHeight = MOBILE_ROW_HEIGHT;
+      } else {
+        columnDefs = Definitions.nonMobileColumn;
+      }
+      const gridOptions = {
+        rowData: data,
+        context: getGridContext(),
+        resetRowDataOnUpdate: true,
+        columnDefs: columnDefs,
+        rowHeight,
+      };
 
-  const intervalValues = [
-    { sec: 30, readable: '30 sec' },
-    { sec: 60 - 1, readable: '1 min' },
-    { sec: 10 * 60, readable: '10 min' },
-    { sec: 30 * 60, readable: '30 min' },
-    { sec: 60 * 60 - 1, readable: '1 hour' },
-  ];
+      return createGrid(document.getElementById('dataGrid'), gridOptions);
+    };
+
+    const getGridContext = () => {
+      const homeLoc = document.getElementById(locationFieldId).value;
+
+      return { homeLoc };
+    };
+
+    let useToken = '';
+    const refreshButtonElement = document.getElementById(refreshButtonId);
+    if (!refreshButtonElement.disabled) {
+      setRefreshButtonText('cancel');
+      refreshButtonElement.disabled = true;
+
+      // Check for a stored, unexpired token
+      if (!auth.token || Date.now() >= auth.expiration * 1000) {
+        // Get a new token
+        useToken = await auth.refreshToken();
+      } else {
+        useToken = auth.token;
+      }
+
+      await getJobsData(useToken, { category: jobCategory })
+        .then((rawData) => {
+          // Remove Shift job types from data
+          const filteredJobs = rawData.jobs.filter(
+            (job) => job.typeName !== 'Shift'
+          );
+
+          // Reset failed attempts
+          if (failedAttempts > 0) {
+            console.log(
+              `Token restored after ${failedAttempts} failed attempt(s).`
+            );
+            setFailedAttempts(0);
+          }
+          setRefreshButtonText('refresh');
+          if (!grid) {
+            // Initialization
+            setGrid(initGrid(filteredJobs));
+          } else {
+            grid.setGridOption('rowData', filteredJobs);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          setRefreshButtonText('refresh');
+        })
+        .finally(() => {
+          refreshButtonElement.disabled = false;
+        });
+    }
+  }, [failedAttempts, grid, jobCategory, locationFieldId, refreshButtonId]);
+
+  // Event Handlers
+  const handlePageChange = useCallback(() => {
+    switch (page) {
+      case 'grid':
+        // Change to settings
+        setPage('settings');
+        setHomeButtonText('home');
+        return;
+      case 'settings':
+        // Return to grid
+        setPage('grid');
+        setHomeButtonText('settings');
+        return;
+      case 'mobileSelector':
+        // Return to grid
+        setPage('mobileSelector');
+        setHomeButtonText('home');
+        return;
+      default:
+        return;
+    }
+  }, [page]);
+
+  const handleMobileSelectorToggle = useCallback(
+    (show) => {
+      const div = document.getElementById(mobileSelectorDivId);
+
+      if (!show || mobileSelectorShown) {
+        div.classList.remove('show');
+        setMobileSelectorShown(false);
+      } else {
+        div.classList.add('show');
+        setMobileSelectorShown(true);
+      }
+    },
+    [mobileSelectorDivId, mobileSelectorShown]
+  );
+
+  const handleJobCategoryChange = useCallback(
+    (e) => {
+      setJobCategory(e.target.value);
+      localStorage.setItem('category', e.target.value);
+
+      if (isMobile || mobileSelectorShown) handleMobileSelectorToggle(false);
+    },
+    [handleMobileSelectorToggle, isMobile, mobileSelectorShown]
+  );
+
+  const handleLocationChange = useCallback((e) => {
+    setLocation(e.target.value);
+    localStorage.setItem('location', e.target.value);
+  },[]);
+
+  const handleRefresh = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   // Hooks
-  // Set up timer for auto refresh
-  // Run once on mount
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setTimer((prevTimer) => prevTimer + 1);
-    }, 1000);
-
-    // Clean up interval on unmount
-    return () => clearInterval(intervalId);
-  }, []);
-
   // Checks for stored values from a previous session
   // Run once on mount
   useEffect(() => {
     const keys = [
-      { key: 'autoRefresh', value: `` },
-      { key: 'interval', value: `` },
       { key: 'location', value: `` },
       { key: 'category', value: `` },
     ];
@@ -121,21 +226,11 @@ function App() {
       if (localStorage.getItem(item.key)) {
         const value = localStorage.getItem(item.key);
         switch (item.key) {
-          case 'autoRefresh':
-            if (value === 'true') {
-              setAutoRefreshEnabled(true);
-            } else if (value === 'false') {
-              setAutoRefreshEnabled(false);
-            }
-            break;
-          case 'interval':
-            setAutoRefreshInterval(value);
-            break;
           case 'location':
             setLocation(value);
             break;
           case 'category':
-            setCategory(value);
+            setJobCategory(value);
             break;
           default:
             break;
@@ -151,16 +246,16 @@ function App() {
       setTimeout(function () {
         if (grid) {
           if (window.innerWidth < 1000) {
-            if (!mobile) {
+            if (!isMobile) {
               grid.setGridOption('columnDefs', Definitions.mobileColumn);
               grid.setGridOption('rowHeight', 130);
-              setMobile(true);
+              setIsMobile(true);
             }
           } else {
-            if (mobile) {
+            if (isMobile) {
               grid.setGridOption('columnDefs', Definitions.nonMobileColumn);
               grid.setGridOption('rowHeight', 42);
-              setMobile(false);
+              setIsMobile(false);
             }
           }
         }
@@ -170,16 +265,7 @@ function App() {
     window.addEventListener('resize', resize);
 
     return () => window.removeEventListener('resize', resize);
-  }, [grid, mobile]);
-
-  // Resets elapsed time when autoRefreshEnabled state changes
-  // Runs on change in autoRefreshEnabled
-  useEffect(() => {
-    if (autoRefreshEnabled) {
-      localStorage.setItem('autoRefresh', autoRefreshEnabled);
-      setTimer(0);
-    }
-  }, [autoRefreshEnabled]);
+  }, [grid, isMobile]);
 
   // Updates grid context object when location changes
   // Runs on change in location
@@ -193,237 +279,33 @@ function App() {
   // Runs on change in category
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
-
-  const getGridContext = () => {
-    const location = document.getElementById(locationId).value;
-
-    return {
-      homeLoc: location,
-    };
-  };
-
-  const refresh = async () => {
-    let useToken = '';
-    const refreshButton = document.getElementById(refreshButtonId);
-    if (!refreshButton.disabled) {
-      setButtonText('cancel');
-      refreshButton.disabled = true;
-
-      // Check for a stored, unexpired token
-      if (!auth.token || Date.now() >= auth.expiration * 1000) {
-        // Get a new token
-        useToken = await auth.refreshToken();
-      } else {
-        useToken = auth.token;
-      }
-
-      await getJobsData(useToken, { category: category })
-        .then((rawData) => {
-          // Remove Shift job types from data
-          const filteredJobs = rawData.jobs.filter(
-            (job) => job.typeName !== 'Shift'
-          );
-
-          // Reset failed attempts
-          if (failedAttempts > 0) {
-            console.log(
-              `Token restored after ${failedAttempts} failed attempt(s).`
-            );
-            setFailedAttempts(0);
-          }
-          setButtonText('refresh');
-          if (!grid) {
-            // Initialization
-            setGrid(initGrid(filteredJobs));
-          } else {
-            grid.setGridOption('rowData', filteredJobs);
-          }
-          setTimer(0);
-        })
-        .catch((error) => {
-          console.log(error);
-          if (autoRefreshEnabled) {
-            // Update failed attempts
-            setFailedAttempts(failedAttempts + 1);
-            if (failedAttempts + 1 <= 3) {
-              // Retry in 3 seconds
-              const interval = intervalValues[autoRefreshInterval].sec;
-              setTimer(interval - 3);
-              auth.refreshToken();
-            } else {
-              setFailedAttempts(0);
-              setAutoRefreshEnabled(false);
-            }
-          } else {
-            auth.clearToken();
-          }
-          setButtonText('refresh');
-        })
-        .finally(() => {
-          refreshButton.disabled = false;
-        });
-    }
-  };
-
-  function initGrid(data) {
-    let columnDefs;
-    let rowHeight = NONMOBILE_ROW_HEIGHT;
-    if (window.innerWidth < 1000) {
-      columnDefs = Definitions.mobileColumn;
-      rowHeight = MOBILE_ROW_HEIGHT;
-    } else {
-      columnDefs = Definitions.nonMobileColumn;
-    }
-    const gridOptions = {
-      rowData: data,
-      context: getGridContext(),
-      resetRowDataOnUpdate: true,
-      columnDefs: columnDefs,
-      rowHeight,
-    };
-
-    return createGrid(document.getElementById('dataGrid'), gridOptions);
-  }
-
-  const toggleSettings = () => {
-    setSettingsOpen(!settingsOpen);
-  };
-
-  if (autoRefreshEnabled && timer >= intervalValues[autoRefreshInterval].sec) {
-    setTimer(0);
-    refresh();
-  }
-
-  // JSX
-  const gridHeight = window.innerHeight - 115;
-  const gridPage = (
-    <div
-      id="dataGrid"
-      className="ag-theme-quartz-dark"
-      style={{ height: gridHeight }}
-    />
-  );
-
-  const settingsPage = (
-    <>
-      <div className="settingsRoot">
-        <div className="settings">
-          <h2>Settings</h2>
-          <h3>Location</h3>
-          <label>
-            Latitude, Longitude:
-            <br />
-            <input
-              id={locationId}
-              defaultValue={location}
-              onChange={(e) => {
-                setLocation(e.target.value);
-                localStorage.setItem('location', e.target.value);
-              }}
-              style={{ width: 270 }}
-            />
-          </label>
-          {/* <hr />
-          <h3>Auto Refresh</h3>
-          <input
-            name="autoRefresh"
-            type="checkbox"
-            checked={autoRefreshEnabled}
-            onChange={(e) => {
-              setTimer(0);
-              setAutoRefreshEnabled(e.target.checked);
-              localStorage.setItem('autoRefresh', e.target.checked);
-            }}
-          />
-          Enabled
-          <br />
-          <label>
-            Interval:
-            <br />
-            <input
-              type="range"
-              min={0}
-              max={4}
-              step={1}
-              value={autoRefreshInterval}
-              style={{ width: 150 }}
-              list="ticks"
-              onChange={(e) => {
-                setAutoRefreshInterval(e.target.value);
-                localStorage.setItem('interval', e.target.value);
-              }}
-            />
-          </label>
-          <br />
-          {intervalValues[autoRefreshInterval].readable}
-          <datalist id="ticks">
-            <option>0</option>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-          </datalist> */}
-        </div>
-      </div>
-      <sub>parched by robby scheer in portland, oregon</sub>
-    </>
-  );
+  }, [jobCategory, refresh]);
 
   return (
     <>
-      <nav>
-        <div className="title">
-          {/* eslint-disable-next-line no-undef */}
-          Parched<sup>v{APP_VERSION}</sup>
-        </div>
-        {/* <div className="error">{error}errortext</div>
-        <div className="countdown">
-          timer
-          {autoRefreshEnabled
-            ? `Auto refresh in ${toReadableTimer(
-                intervalValues[autoRefreshInterval].sec - timer
-              )}`
-            : `\u00A0`}
-        </div> */}
-        <div className="navButtons">
-          <button type="button" onClick={refresh} id={refreshButtonId}>
-            <span className="material-icons" style={{ fontSize: 25 }}>
-              {buttonText}
-            </span>
-          </button>
-          <button type="button" onClick={toggleSettings}>
-            <span className="material-icons" style={{ fontSize: 25 }}>
-              {settingsOpen ? 'home' : 'settings'}
-            </span>
-          </button>
-        </div>
-      </nav>
-      <div className="flex-container">
-        <div className="flex-item flex-item-center">
-          {categories.map((item) => (
-            <button
-              key={item.code + item.name}
-              type="button"
-              className={category == item.code ? '' : 'unselectedButton'}
-              value={item.code}
-              onClick={(e) => {
-                if (e.target.value !== category) {
-                  setCategory(e.target.value);
-                  localStorage.setItem('category', e.target.value);
-                }
-              }}
-            >
-              {item.name}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div style={{ display: settingsOpen ? 'none' : 'block' }}>{gridPage}</div>
-      <div style={{ display: !settingsOpen ? 'none' : 'block' }}>
-        {settingsPage}
-      </div>
+      <Navbar
+        {...{
+          refreshButtonId,
+          mobileSelectorDivId,
+          isMobile,
+          mobileSelectorShown,
+          handleMobileSelectorToggle,
+          jobCategory,
+          refreshButtonText,
+          homeButtonText,
+          handleJobCategoryChange,
+          handlePageChange,
+          handleRefresh,
+        }}
+      />
+      <Content
+        {...{
+          locationFieldId,
+          page,
+          location,
+          handleLocationChange,
+        }}
+      />
     </>
   );
 }
