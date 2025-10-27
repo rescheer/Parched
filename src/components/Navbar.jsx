@@ -1,8 +1,10 @@
 // Components
+import { memo } from 'react';
 import CategorySelector from './CategorySelector';
 
-export default function Navbar({
-  reactIds,
+function Navbar({
+  refreshButtonId,
+  mobileSelectorDivId,
   isMobile,
   mobileSelectorShown,
   handleMobileSelectorToggle,
@@ -27,7 +29,7 @@ export default function Navbar({
       <span className={'nav-item-center' + mobileFlex}>
         <CategorySelector
           {...{
-            reactIds,
+            mobileSelectorDivId,
             isMobile,
             mobileSelectorShown,
             jobCategory,
@@ -43,7 +45,7 @@ export default function Navbar({
           className="nav-button"
           type="button"
           onClick={handleRefresh}
-          id={reactIds.refreshButton}
+          id={refreshButtonId}
         >
           <span className="material-icons">{refreshButtonText}</span>
         </button>
@@ -62,3 +64,5 @@ export default function Navbar({
     </nav>
   );
 }
+
+export default memo(Navbar);

@@ -1,7 +1,7 @@
 import { poached } from '../config/config';
 
 export default function CategorySelector({
-  reactIds,
+  mobileSelectorDivId,
   isMobile,
   jobCategory,
   handleJobCategoryChange,
@@ -46,7 +46,7 @@ export default function CategorySelector({
             </span>
           </button>
         </div>
-        <div className="nav-item nav-item-center mobile-selector" id={reactIds.mobileSelectorDiv}>
+        <div className="nav-item nav-item-center mobile-selector" id={mobileSelectorDivId}>
           {categoryList}
         </div>
       </>

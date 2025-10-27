@@ -1,5 +1,5 @@
 export default function PageSettings({
-  reactIds,
+  locationFieldId,
   location,
   handleLocationChange,
 }) {
@@ -13,7 +13,7 @@ export default function PageSettings({
             Latitude, Longitude:
             <br />
             <input
-              id={reactIds.locationField}
+              id={locationFieldId}
               defaultValue={location}
               onChange={handleLocationChange}
               style={{ width: 270 }}

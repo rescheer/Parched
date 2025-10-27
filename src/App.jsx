@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { createGrid } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -60,11 +60,10 @@ async function getJobsData(token, params = {}) {
 }
 
 function App() {
-  const reactIds = {
-    refreshButton: useId(),
-    locationField: useId(),
-    mobileSelectorDiv: useId(),
-  };
+  // Element IDs
+  const refreshButtonId = useId();
+  const locationFieldId = useId();
+  const mobileSelectorDivId = useId();
 
   // Data States
   const [grid, setGrid] = useState(null);
@@ -80,6 +79,140 @@ function App() {
 
   // Error states
   const [failedAttempts, setFailedAttempts] = useState(0);
+
+  // Main refresh function
+  const refresh = useCallback(async () => {
+    const initGrid = (data) => {
+      // Empty the dataGrid element just in case
+      document.getElementById('dataGrid').innerHTML = '';
+
+      let columnDefs;
+      let rowHeight = NONMOBILE_ROW_HEIGHT;
+      if (window.innerWidth < 1000) {
+        columnDefs = Definitions.mobileColumn;
+        rowHeight = MOBILE_ROW_HEIGHT;
+      } else {
+        columnDefs = Definitions.nonMobileColumn;
+      }
+      const gridOptions = {
+        rowData: data,
+        context: getGridContext(),
+        resetRowDataOnUpdate: true,
+        columnDefs: columnDefs,
+        rowHeight,
+      };
+
+      return createGrid(document.getElementById('dataGrid'), gridOptions);
+    };
+
+    const getGridContext = () => {
+      const homeLoc = document.getElementById(locationFieldId).value;
+
+      return { homeLoc };
+    };
+
+    let useToken = '';
+    const refreshButtonElement = document.getElementById(refreshButtonId);
+    if (!refreshButtonElement.disabled) {
+      setRefreshButtonText('cancel');
+      refreshButtonElement.disabled = true;
+
+      // Check for a stored, unexpired token
+      if (!auth.token || Date.now() >= auth.expiration * 1000) {
+        // Get a new token
+        useToken = await auth.refreshToken();
+      } else {
+        useToken = auth.token;
+      }
+
+      await getJobsData(useToken, { category: jobCategory })
+        .then((rawData) => {
+          // Remove Shift job types from data
+          const filteredJobs = rawData.jobs.filter(
+            (job) => job.typeName !== 'Shift'
+          );
+
+          // Reset failed attempts
+          if (failedAttempts > 0) {
+            console.log(
+              `Token restored after ${failedAttempts} failed attempt(s).`
+            );
+            setFailedAttempts(0);
+          }
+          setRefreshButtonText('refresh');
+          if (!grid) {
+            // Initialization
+            setGrid(initGrid(filteredJobs));
+          } else {
+            grid.setGridOption('rowData', filteredJobs);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+          setRefreshButtonText('refresh');
+        })
+        .finally(() => {
+          refreshButtonElement.disabled = false;
+        });
+    }
+  }, [failedAttempts, grid, jobCategory, locationFieldId, refreshButtonId]);
+
+  // Event Handlers
+  const handlePageChange = useCallback(() => {
+    switch (page) {
+      case 'grid':
+        // Change to settings
+        setPage('settings');
+        setHomeButtonText('home');
+        return;
+      case 'settings':
+        // Return to grid
+        setPage('grid');
+        setHomeButtonText('settings');
+        return;
+      case 'mobileSelector':
+        // Return to grid
+        setPage('mobileSelector');
+        setHomeButtonText('home');
+        return;
+      default:
+        return;
+    }
+  }, [page]);
+
+  const handleMobileSelectorToggle = useCallback(
+    (show) => {
+      const div = document.getElementById(mobileSelectorDivId);
+
+      if (!show || mobileSelectorShown) {
+        div.classList.remove('show');
+        setMobileSelectorShown(false);
+      } else {
+        div.classList.add('show');
+        setMobileSelectorShown(true);
+      }
+    },
+    [mobileSelectorDivId, mobileSelectorShown]
+  );
+
+  const handleJobCategoryChange = useCallback(
+    (e) => {
+      setJobCategory(e.target.value);
+      localStorage.setItem('category', e.target.value);
+
+      if (isMobile || mobileSelectorShown) handleMobileSelectorToggle(false);
+    },
+    [handleMobileSelectorToggle, isMobile, mobileSelectorShown]
+  );
+
+  const handleLocationChange = useCallback((e) => {
+    setLocation(e.target.value);
+    localStorage.setItem('location', e.target.value);
+  },[]);
+
+  const handleRefresh = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   // Hooks
   // Checks for stored values from a previous session
@@ -140,148 +273,20 @@ function App() {
     if (location && grid) {
       grid.setGridOption('context', { homeLoc: location });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
+  }, [location, grid]);
 
   // Refreshes grid data when the job category changes.
   // Runs on change in category
   useEffect(() => {
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobCategory]);
-
-  // Event Handlers
-  const handlePageChange = () => {
-    switch (page) {
-      case 'grid':
-        // Change to settings
-        setPage('settings');
-        setHomeButtonText('home');
-        return;
-      case 'settings':
-        // Return to grid
-        setPage('grid');
-        setHomeButtonText('settings');
-        return;
-      case 'mobileSelector':
-        // Return to grid
-        setPage('mobileSelector');
-        setHomeButtonText('home');
-        return;
-      default:
-        return;
-    }
-  };
-
-  const handleJobCategoryChange = (e) => {
-    setJobCategory(e.target.value);
-    localStorage.setItem('category', e.target.value);
-
-    if (isMobile || mobileSelectorShown) handleMobileSelectorToggle(false);
-  };
-
-  const handleLocationChange = (e) => {
-    setLocation(e.target.value);
-    localStorage.setItem('location', e.target.value);
-  };
-
-  const handleRefresh = () => {
-    refresh();
-  };
-
-  const handleMobileSelectorToggle = (show) => {
-    const div = document.getElementById(reactIds.mobileSelectorDiv);
-
-    if (!show || mobileSelectorShown) {
-      div.classList.remove('show');
-      setMobileSelectorShown(false);
-    } else {
-      div.classList.add('show');
-      setMobileSelectorShown(true);
-    }
-  };
-
-  const getGridContext = () => {
-    const homeLoc = document.getElementById(reactIds.locationField).value;
-
-    return { homeLoc };
-  };
-
-  const refresh = async () => {
-    let useToken = '';
-    const refreshButtonId = document.getElementById(reactIds.refreshButton);
-    if (!refreshButtonId.disabled) {
-      setRefreshButtonText('cancel');
-      refreshButtonId.disabled = true;
-
-      // Check for a stored, unexpired token
-      if (!auth.token || Date.now() >= auth.expiration * 1000) {
-        // Get a new token
-        useToken = await auth.refreshToken();
-      } else {
-        useToken = auth.token;
-      }
-
-      await getJobsData(useToken, { category: jobCategory })
-        .then((rawData) => {
-          // Remove Shift job types from data
-          const filteredJobs = rawData.jobs.filter(
-            (job) => job.typeName !== 'Shift'
-          );
-
-          // Reset failed attempts
-          if (failedAttempts > 0) {
-            console.log(
-              `Token restored after ${failedAttempts} failed attempt(s).`
-            );
-            setFailedAttempts(0);
-          }
-          setRefreshButtonText('refresh');
-          if (!grid) {
-            // Initialization
-            setGrid(initGrid(filteredJobs));
-          } else {
-            grid.setGridOption('rowData', filteredJobs);
-          }
-        })
-        .catch((error) => {
-          console.log(error);
-          setRefreshButtonText('refresh');
-        })
-        .finally(() => {
-          refreshButtonId.disabled = false;
-        });
-    }
-  };
-
-  function initGrid(data) {
-    // Empty the dataGrid element just in case
-    document.getElementById('dataGrid').innerHTML = '';
-
-    let columnDefs;
-    let rowHeight = NONMOBILE_ROW_HEIGHT;
-    if (window.innerWidth < 1000) {
-      columnDefs = Definitions.mobileColumn;
-      rowHeight = MOBILE_ROW_HEIGHT;
-    } else {
-      columnDefs = Definitions.nonMobileColumn;
-    }
-    const gridOptions = {
-      rowData: data,
-      context: getGridContext(),
-      resetRowDataOnUpdate: true,
-      columnDefs: columnDefs,
-      rowHeight,
-    };
-
-    return createGrid(document.getElementById('dataGrid'), gridOptions);
-  }
+  }, [jobCategory, refresh]);
 
   return (
     <>
       <Navbar
         {...{
-          reactIds,
+          refreshButtonId,
+          mobileSelectorDivId,
           isMobile,
           mobileSelectorShown,
           handleMobileSelectorToggle,
@@ -295,7 +300,7 @@ function App() {
       />
       <Content
         {...{
-          reactIds,
+          locationFieldId,
           page,
           location,
           handleLocationChange,

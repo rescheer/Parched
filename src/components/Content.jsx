@@ -2,7 +2,7 @@ import PageGrid from './pageGrid';
 import PageSettings from './pageSettings';
 
 export default function Content({
-  reactIds,
+  locationFieldId,
   page,
   location,
   handleLocationChange,
@@ -19,7 +19,7 @@ export default function Content({
         className="full-height"
         style={{ display: page === 'settings' ? 'block' : 'none' }}
       >
-        <PageSettings {...{ reactIds, location, handleLocationChange }} />
+        <PageSettings {...{ locationFieldId, location, handleLocationChange }} />
       </div>
     </div>
   );
