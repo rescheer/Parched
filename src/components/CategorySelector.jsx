@@ -33,22 +33,27 @@ export default function CategorySelector({
 
   if (!isMobile) {
     const categoryList = getCategoryButtonMap(false);
-    return <div className="nav-item nav-item-center no-select">{categoryList}</div>;
+    return (
+      <span className="nav-item nav-item-center no-select">{categoryList}</span>
+    );
   } else {
     const categoryList = getCategoryButtonMap(true);
     return (
       <>
-        <div className="nav-item nav-item-center">
+        <span className="nav-item nav-item-center">
           <button type="button" onClick={handleMobileSelectorToggle}>
             {jobCategoryList.find((item) => item.code == jobCategory)?.name}
             <span className="material-icons" style={{ fontSize: '1em' }}>
               arrow_drop_down
             </span>
           </button>
-        </div>
-        <div className="nav-item nav-item-center mobile-selector" id={mobileSelectorDivId}>
+        </span>
+        <span
+          className="nav-item nav-item-center mobile-selector"
+          id={mobileSelectorDivId}
+        >
           {categoryList}
-        </div>
+        </span>
       </>
     );
   }

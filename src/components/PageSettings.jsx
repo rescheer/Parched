@@ -21,7 +21,11 @@ export default function PageSettings({
           </label>
         </div>
       </div>
-      <sub>parched by robby scheer in portland, oregon</sub>
+      <sub>
+        {/* eslint-disable-next-line no-undef*/}
+        parched{APP_VERSION ? ' v' + APP_VERSION : ''} by robby scheer in
+        portland, oregon
+      </sub>
     </>
   );
 }

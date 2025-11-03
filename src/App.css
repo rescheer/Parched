@@ -54,6 +54,7 @@ a:hover {
   position: absolute;
   overflow: hidden;
   top: 5vh;
+  left: 0;
   max-height: 0;
   background-color: #000000;
   transition: max-height 0.5s ease-in-out;

@@ -19,11 +19,7 @@ function Navbar({
   return (
     <nav>
       {/* Title */}
-      <span className={'nav-item-left title' + mobileFlex}>
-        Parched
-        {/* eslint-disable-next-line no-undef */}
-        <span className="version"> v{APP_VERSION}</span>
-      </span>
+      <span className={'nav-item-left title' + mobileFlex}>Parched</span>
 
       {/* Category Selector */}
       <span className={'nav-item-center' + mobileFlex}>
@@ -40,7 +36,7 @@ function Navbar({
       </span>
 
       {/* Nav Buttons */}
-      <div className={'nav-item-right' + mobileFlex}>
+      <span className={'nav-item-right' + mobileFlex}>
         <button
           className="nav-button"
           type="button"
@@ -60,7 +56,7 @@ function Navbar({
         ) : (
           ''
         )}
-      </div>
+      </span>
     </nav>
   );
 }
