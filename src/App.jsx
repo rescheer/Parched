@@ -19,7 +19,6 @@ import './App.css';
 const MOBILE_ROW_HEIGHT = 130;
 const NONMOBILE_ROW_HEIGHT = 42;
 const defaultParams = {
-  category: 51,
   distance: 15,
   isLikelyFraud: false,
   latitude: 45.533467,
@@ -27,6 +26,7 @@ const defaultParams = {
   locationLabel: 'Portland, OR',
   status: 'publish',
 };
+const defaultJobCategories = [51, 52, 54];
 
 const apiBaseUrl = 'https://poachedjobs.com/api/v1/jobs?';
 const auth = new AuthProvider();
@@ -34,7 +34,7 @@ const auth = new AuthProvider();
 /**
  * Asynchronously returns jobs data from the Poached API. Returns undefined on failure.
  */
-async function getJobsData(token, params = {}) {
+async function getJobsData(token, categories, params = {}) {
   const options = {
     method: 'GET',
     headers: {
@@ -45,9 +45,12 @@ async function getJobsData(token, params = {}) {
   // Encode API URL
   const paramData = Object.assign(defaultParams, params);
   const searchParams = new URLSearchParams();
+  // Add default parameters
   Object.entries(paramData).forEach(([key, value]) => {
     searchParams.append(key, value);
   });
+  // Add category parameters
+  categories.forEach((cat) => searchParams.append('category[]', cat));
   const finalAPIUrl = apiBaseUrl + searchParams.toString();
 
   return await fetch(finalAPIUrl, options).then((stream) => {
@@ -70,7 +73,7 @@ function App() {
 
   // UI States
   const [page, setPage] = useState('grid');
-  const [jobCategory, setJobCategory] = useState(51);
+  const [jobCategory, setJobCategory] = useState(defaultJobCategories);
   const [location, setLocation] = useState(``);
   const [refreshButtonText, setRefreshButtonText] = useState('refresh');
   const [homeButtonText, setHomeButtonText] = useState('settings');
@@ -125,17 +128,17 @@ function App() {
         useToken = auth.token;
       }
 
-      await getJobsData(useToken, { category: jobCategory })
+      await getJobsData(useToken, jobCategory)
         .then((rawData) => {
           // Remove Shift job types from data
           const filteredJobs = rawData.jobs.filter(
-            (job) => job.typeName !== 'Shift'
+            (job) => job.typeName !== 'Shift',
           );
 
           // Reset failed attempts
           if (failedAttempts > 0) {
             console.log(
-              `Token restored after ${failedAttempts} failed attempt(s).`
+              `Token restored after ${failedAttempts} failed attempt(s).`,
             );
             setFailedAttempts(0);
           }
@@ -192,23 +195,31 @@ function App() {
         setMobileSelectorShown(true);
       }
     },
-    [mobileSelectorDivId, mobileSelectorShown]
+    [mobileSelectorDivId, mobileSelectorShown],
   );
 
   const handleJobCategoryChange = useCallback(
     (e) => {
-      setJobCategory(e.target.value);
-      localStorage.setItem('category', e.target.value);
+      const newCategories = [...jobCategory];
+      const selectedCategory = +e.target.value;
+
+      const selectedIndex = newCategories.findIndex((val) => selectedCategory === val);
+      if (selectedIndex === -1) {
+        newCategories.push(selectedCategory);
+      } else {
+        newCategories.splice(selectedIndex, 1);
+      }
+      setJobCategory(newCategories);
 
       if (isMobile || mobileSelectorShown) handleMobileSelectorToggle(false);
     },
-    [handleMobileSelectorToggle, isMobile, mobileSelectorShown]
+    [handleMobileSelectorToggle, jobCategory, isMobile, mobileSelectorShown],
   );
 
   const handleLocationChange = useCallback((e) => {
     setLocation(e.target.value);
     localStorage.setItem('location', e.target.value);
-  },[]);
+  }, []);
 
   const handleRefresh = useCallback(() => {
     refresh();
@@ -228,9 +239,6 @@ function App() {
         switch (item.key) {
           case 'location':
             setLocation(value);
-            break;
-          case 'category':
-            setJobCategory(value);
             break;
           default:
             break;
