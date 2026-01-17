@@ -3,6 +3,8 @@ import FakeLinkRenderer from '../renderer/FakeLinkRenderer';
 import MobileCellRenderer from '../renderer/MobileCellRenderer';
 import timeSinceString from '../common/timeSinceString';
 
+import { poached } from './config';
+
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
@@ -83,10 +85,13 @@ const col = {
       }
     },
   },
-  typeName: {
-    field: 'typeName',
-    headerName: 'Job Type',
-    valueFormatter: (cb) => (cb.value ? cb.value : 'Unspecified'),
+  category: {
+    field: 'category',
+    headerName: 'Category',
+    valueFormatter: (cb) => {
+      const { jobCategoryList } = poached;
+      return jobCategoryList.find((item) => item.code == cb.value)?.name;
+    },
     flex: 1,
     filter: true,
   },
@@ -104,7 +109,7 @@ const col = {
       getDistanceFromMe(
         cb.context?.homeLoc,
         cb.data.latitude,
-        cb.data.longitude
+        cb.data.longitude,
       ),
     valueFormatter: (cb) =>
       typeof cb.value === 'string' ? cb.value : `${+cb.value.toFixed(1)} mi`,
@@ -156,7 +161,7 @@ export const nonMobileColumn = [
   col.company,
   col.title,
   col.postDate,
-  // col.typeName,
+  col.category,
   col.city,
   col.distance,
   // col.jobViews,

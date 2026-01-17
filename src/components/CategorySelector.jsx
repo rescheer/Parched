@@ -3,6 +3,7 @@ import { poached } from '../config/config';
 export default function CategorySelector({
   mobileSelectorDivId,
   isMobile,
+  mobileSelectorShown,
   jobCategory,
   handleJobCategoryChange,
   handleMobileSelectorToggle,
@@ -20,7 +21,7 @@ export default function CategorySelector({
       <span key={item.code + item.name}>
         <button
           type="button"
-          className={jobCategory == item.code ? '' : 'unselectedButton'}
+          className={jobCategory.includes(+item.code) ? '' : `unselectedButton`}
           value={item.code}
           onClick={handleJobCategoryChange}
         >
@@ -43,8 +44,8 @@ export default function CategorySelector({
         <span className="nav-item nav-item-center">
           <button type="button" onClick={handleMobileSelectorToggle}>
             {jobCategoryList.find((item) => item.code == jobCategory)?.name}
-            <span className="material-icons" style={{ fontSize: '1em' }}>
-              arrow_drop_down
+            <span className="material-icons" style={{ fontSize: '2em' }}>
+              {mobileSelectorShown ? 'arrow_drop_up' :'arrow_drop_down'}
             </span>
           </button>
         </span>
