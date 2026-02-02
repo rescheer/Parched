@@ -88,9 +88,10 @@ const col = {
   category: {
     field: 'category',
     headerName: 'Category',
-    valueFormatter: (cb) => {
+    valueGetter: (cb) => {
       const { jobCategoryList } = poached;
-      return jobCategoryList.find((item) => item.code == cb.value)?.name;
+      return jobCategoryList.find((item) => item.code == cb.data.category)
+        ?.name;
     },
     flex: 1,
     filter: 'agTextColumnFilter',
