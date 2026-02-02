@@ -16,9 +16,7 @@ export default class AuthProvider {
     },
     cognito: {
       method: 'GET',
-      url: `https://corsproxy.io/?${encodeURIComponent(
-        'https://poachedjobs.com/api/v1/auth/cognito'
-      )}`,
+      url: 'https://poachedjobs.com/api/v1/auth/cognito',
     },
     identity: {
       method: 'POST',
@@ -208,7 +206,7 @@ export default class AuthProvider {
   #getSignature = (keys) => {
     return HmacSHA256(
       this.#getStringToSign(keys),
-      this.#getSigningKey(keys)
+      this.#getSigningKey(keys),
     ).toString(enc.Hex);
   };
 
