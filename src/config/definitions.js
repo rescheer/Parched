@@ -93,7 +93,7 @@ const col = {
       return jobCategoryList.find((item) => item.code == cb.value)?.name;
     },
     flex: 1,
-    filter: true,
+    filter: 'agTextColumnFilter',
   },
   city: {
     field: 'city',
