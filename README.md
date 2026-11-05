@@ -15,3 +15,7 @@ An alternative feature-rich front-end for Poachedjobs.com using Vite and React. 
 
 ## Planned Features
 - Mobile improvements
+
+## AI Usage Disclosure
+- AI was **not** used in any way during development of this project
+- All code in this repo was hand written
